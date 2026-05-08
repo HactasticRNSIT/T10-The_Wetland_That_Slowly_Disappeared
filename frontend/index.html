@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WetlandAI — Ecological Intelligence Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    :root {
+      --bg-base:       #050c0f;
+      --bg-surface:    #0a1519;
+      --bg-elevated:   #0f1e24;
+      --bg-hover:      #132229;
+      --border-subtle: #1a2f38;
+      --border-mid:    #234050;
+      --border-accent: #2d5a6e;
+
+      --text-primary:  #d4ede8;
+      --text-secondary:#7ab5a8;
+      --text-dim:      #3d6872;
+      --text-mono:     #a8d4cc;
+
+      --accent-teal:   #1de9b6;
+      --accent-blue:   #38b2f5;
+      --accent-green:  #4ade80;
+      --danger:        #ff4d4d;
+      --warning:       #fbbf24;
+      --success:       #4ade80;
+      --info:          #38b2f5;
+
+      --font-display:  'Syne', sans-serif;
+      --font-mono:     'JetBrains Mono', monospace;
+      --font-body:     'DM Sans', sans-serif;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 22px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    /* Radial glow at top */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 500px;
+      background: radial-gradient(ellipse, rgba(29, 233, 182, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 2.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .logo-block {}
+
+    .logo {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #1de9b6 0%, #0891b2 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #050c0f;
+      flex-shrink: 0;
+    }
+
+    .logo-sub {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-dim);
+      margin-top: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .live-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 77, 77, 0.08);
+      border: 1px solid rgba(255, 77, 77, 0.2);
+      border-radius: 50px;
+      padding: 6px 14px;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+      animation: pulse-danger 1.5s infinite;
+    }
+
+    .live-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--danger);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .timestamp {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+    }
+
+    /* ── TABS ── */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 2rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 5px;
+    }
+
+    .tab {
+      padding: 9px 18px;
+      border: none;
+      border-radius: var(--radius-lg);
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-dim);
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--text-secondary);
+      background: var(--bg-hover);
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #0d2d38 0%, #0d2030 100%);
+      color: var(--accent-teal);
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 0 20px rgba(29, 233, 182, 0.08), inset 0 1px 0 rgba(29, 233, 182, 0.15);
+    }
+
+    .tab i { font-size: 15px; }
+
+    /* ── PANEL / CARD ── */
+    .panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+    }
+
+    .metric-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      transition: border-color 0.25s, transform 0.25s;
+      cursor: default;
+    }
+
+    .metric-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+    }
+
+    .metric-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-value {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .metric-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 8px;
+      font-weight: 400;
+    }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* ── BADGE ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 50px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .badge-danger  { background: rgba(255, 77, 77, 0.1);   color: #ff7070; border: 1px solid rgba(255,77,77,0.2); }
+    .badge-warning { background: rgba(251,191,36, 0.1);    color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+    .badge-success { background: rgba(74, 222, 128, 0.08); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+    .badge-info    { background: rgba(56, 178, 245, 0.1);  color: #38b2f5; border: 1px solid rgba(56,178,245,0.2); }
+
+    /* ── MAP GRID ── */
+    .map-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 5px;
+    }
+
+    .map-cell {
+      aspect-ratio: 1;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-cell::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 100%);
+    }
+
+    .map-cell:hover {
+      transform: scale(1.15);
+      z-index: 10;
+    }
+
+    .map-cell span {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── FACTOR BARS ── */
+    .factor-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .factor-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      width: 140px;
+      flex-shrink: 0;
+    }
+
+    .factor-track {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-base);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .factor-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 1s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .factor-pct {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-mono);
+      min-width: 30px;
+      text-align: right;
+    }
+
+    /* ── WETLAND ROW ── */
+    .wetland-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background 0.2s;
+    }
+
+    .wetland-row:hover {
+      background: var(--bg-hover);
+      border-radius: 8px;
+    }
+
+    /* ── STATUS RING ── */
+    .status-ring {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    /* ── ANOMALY ITEM ── */
+    .anomaly-item {
+      padding: 16px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-elevated);
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+
+    .anomaly-item:hover { border-color: var(--border-mid); }
+
+    .anomaly-critical { border-left: 3px solid var(--danger); }
+    .anomaly-moderate { border-left: 3px solid var(--warning); }
+    .anomaly-mild     { border-left: 3px solid var(--info); }
+
+    /* ── ACTION BUTTON ── */
+    .action-btn {
+      padding: 9px 16px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-teal);
+      color: var(--accent-teal);
+    }
+
+    /* ── DATA SOURCE CARD ── */
+    .datasource-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      transition: border-color 0.2s;
+    }
+    .datasource-card:hover { border-color: var(--border-mid); }
+
+    /* ── SELECT ── */
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-mid);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 13px;
+      margin-bottom: 20px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus { border-color: var(--accent-teal); }
+
+    /* ── TOOLTIP ── */
+    .map-tooltip {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(29, 233, 182, 0.06);
+      border: 1px solid rgba(29, 233, 182, 0.2);
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent-teal);
+      line-height: 1.5;
+    }
+
+    /* ── AI ASSESSMENT ── */
+    .ai-assessment-box {
+      padding: 14px 16px;
+      background: rgba(29, 233, 182, 0.04);
+      border: 1px solid rgba(29, 233, 182, 0.12);
+      border-radius: var(--radius-md);
+      margin-top: 16px;
+    }
+
+    .ai-assessment-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--accent-teal);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ai-assessment-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* ── SCROLLABLE ── */
+    .scrollable {
+      overflow-y: auto;
+      max-height: 380px;
+    }
+
+    .scrollable::-webkit-scrollbar { width: 4px; }
+    .scrollable::-webkit-scrollbar-track { background: transparent; }
+    .scrollable::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 10px; }
+
+    /* ── MINI CHART ── */
+    .mini-chart-container {
+      height: 64px;
+      padding: 8px 0;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes pulse-danger {
+      0%   { box-shadow: 0 0 0 0 rgba(255,77,77,0.7); }
+      70%  { box-shadow: 0 0 0 8px rgba(255,77,77,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,77,77,0); }
+    }
+
+    @keyframes pulse-critical {
+      0%   { box-shadow: 0 0 0 0 rgba(255,77,77,0.7); }
+      70%  { box-shadow: 0 0 0 6px rgba(255,77,77,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,77,77,0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+
+    /* ── MAP LEGEND ── */
+    .map-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 12px;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    /* ── INDICATOR ROW ── */
+    .indicator-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .indicator-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .indicator-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .indicator-value {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* ── PRIORITY ITEM ── */
+    .priority-item {
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* ── DEPENDENCY CARD ── */
+    .dep-card {
+      padding: 14px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 10px;
+      background: var(--bg-elevated);
+      border-left: 3px solid var(--border-accent);
+    }
+
+    /* ── PREDICTION BAR ── */
+    .pred-bar-wrap { text-align: center; }
+    .pred-bar-track {
+      height: 120px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      margin-bottom: 10px;
+      background: var(--bg-base);
+      border-radius: 8px;
+      padding: 0 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* ── GLOW TEXT ── */
+    .glow-teal { color: var(--accent-teal); text-shadow: 0 0 20px rgba(29, 233, 182, 0.4); }
+    .glow-danger { color: var(--danger); text-shadow: 0 0 20px rgba(255, 77, 77, 0.4); }
+    .glow-warning { color: var(--warning); text-shadow: 0 0 15px rgba(251,191,36,0.3); }
+
+    /* ── TAG ── */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-dim);
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* ── SCENARIO BADGE ── */
+    #scenarioBadge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 50px;
+      border: 1px solid var(--border-mid);
+      color: var(--text-mono);
+      background: var(--bg-elevated);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo-block">
+      <div class="logo">
+        <div class="logo-icon"><i class="ti ti-droplet-filled"></i></div>
+        WetlandAI
+      </div>
+      <div class="logo-sub">Ecological intelligence system &nbsp;·&nbsp; multi-source degradation analysis</div>
+    </div>
+    <div class="header-right">
+      <div class="live-pill">
+        <div class="live-dot"></div>
+        <span class="live-label">Live · 3 critical zones</span>
+      </div>
+      <div class="timestamp" id="clockDisplay"></div>
+    </div>
+  </header>
+
+  <!-- TAB NAV -->
+  <nav class="tab-nav">
+    <button class="tab active" onclick="switchTab('overview')"><i class="ti ti-layout-dashboard"></i> Overview</button>
+    <button class="tab" onclick="switchTab('health')"><i class="ti ti-activity-heartbeat"></i> Health Scores</button>
+    <button class="tab" onclick="switchTab('anomaly')"><i class="ti ti-alert-octagon"></i> Anomalies</button>
+    <button class="tab" onclick="switchTab('predict')"><i class="ti ti-chart-line"></i> Predictive Model</button>
+    <button class="tab" onclick="switchTab('factors')"><i class="ti ti-adjustments-alt"></i> Factor Analysis</button>
+  </nav>
+
+  <!-- ── TAB: OVERVIEW ── -->
+  <div id="tab-overview" class="fade-in">
+
+    <!-- Metrics row -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:1.5rem;">
+      <div class="metric-card">
+        <div class="metric-label"><i class="ti ti-map-pin"></i> Wetlands monitored</div>
+        <div class="metric-value glow-teal">24</div>
+        <div class="metric-sub">Across 6 regional clusters</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label"><i class="ti ti-alert-triangle"></i> Critical zones</div>
+        <div class="metric-value glow-danger">3</div>
+        <div class="metric-sub">Requires immediate intervention</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label"><i class="ti ti-leaf"></i> Avg ecosystem score</div>
+        <div class="metric-value glow-warning">54<span style="font-size:16px;color:var(--text-dim);font-weight:500;">/100</span></div>
+        <div class="metric-sub">↓ 8.2% variance from Q4 baseline</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label"><i class="ti ti-database"></i> Data sources</div>
+        <div class="metric-value" style="color:var(--text-primary);">6</div>
+        <div class="metric-sub">Integrated AI data pipelines</div>
+      </div>
+    </div>
+
+    <!-- Map + Risk -->
+    <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div class="section-header" style="margin:0;">Vulnerability spatial map</div>
+          <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);">click cell → telemetry</span>
+        </div>
+        <div class="map-grid" id="mapGrid"></div>
+        <div class="map-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>Stable</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Stressed</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Critical</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#38b2f5;opacity:0.5;"></span>Open Water</div>
+        </div>
+        <div class="map-tooltip" id="mapTooltip"></div>
+      </div>
+
+      <div class="panel">
+        <div class="section-header">Highest risk prioritization</div>
+        <div class="scrollable" id="atRiskList"></div>
+      </div>
+    </div>
+
+    <!-- Data Sources -->
+    <div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <div class="section-header" style="margin:0;">Live infrastructure pipelines</div>
+        <button class="action-btn" onclick="sendPrompt('Full pipeline status report')"><i class="ti ti-refresh"></i> Refresh</button>
+      </div>
+      <div id="dataSources"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB: HEALTH ── -->
+  <div id="tab-health" style="display:none;" class="fade-in">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+      <div class="panel">
+        <div class="section-header">Wetland health index — full inventory</div>
+        <div id="healthList" class="scrollable"></div>
+      </div>
+      <div class="panel">
+        <div class="section-header">Health score composition</div>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;font-family:var(--font-mono);">Select ecosystem to inspect attributes:</p>
+        <select id="wetlandSelect" onchange="updateComposition()"></select>
+        <div id="compositionBars"></div>
+        <div class="ai-assessment-box">
+          <div class="ai-assessment-label"><i class="ti ti-robot"></i> AI assessment</div>
+          <div class="ai-assessment-text" id="aiAssessment"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-header">Biodiversity indicators — all taxa</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;" id="bioDivGrid"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div class="section-header" style="margin:0;">Water quality trend — 12 mo</div>
+        </div>
+        <div id="waterChart" class="mini-chart-container"></div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div class="section-header" style="margin:0;">Species sighting index</div>
+        </div>
+        <div id="speciesChart" class="mini-chart-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: ANOMALY ── -->
+  <div id="tab-anomaly" style="display:none;" class="fade-in">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+          <div class="section-header" style="margin:0;">Detected anomalies — AI signal analysis</div>
+          <button class="action-btn" onclick="sendPrompt('Generate anomaly investigation report')"><i class="ti ti-file-report"></i> Export report</button>
+        </div>
+        <div id="anomalyList"></div>
+      </div>
+      <div class="panel">
+        <div class="section-header">System alerts</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="padding:14px;background:rgba(255,77,77,0.06);border:1px solid rgba(255,77,77,0.18);border-radius:var(--radius-md);">
+            <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--danger);letter-spacing:0.08em;margin-bottom:6px;">⬤ CRITICAL</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">3 zones require intervention</div>
+            <div style="font-size:12px;color:var(--text-dim);">Multi-factor degradation cascade detected.</div>
+          </div>
+          <div style="padding:14px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.18);border-radius:var(--radius-md);">
+            <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--warning);letter-spacing:0.08em;margin-bottom:6px;">⚠ MODERATE</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">3 zones under watch</div>
+            <div style="font-size:12px;color:var(--text-dim);">Seasonal deviation detected. Monitoring elevated.</div>
+          </div>
+          <div style="padding:14px;background:rgba(56,178,245,0.06);border:1px solid rgba(56,178,245,0.18);border-radius:var(--radius-md);">
+            <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--info);letter-spacing:0.08em;margin-bottom:6px;">ℹ INFO</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">1 early-warning signal</div>
+            <div style="font-size:12px;color:var(--text-dim);">Species composition shift flagged for review.</div>
+          </div>
+        </div>
+        <div style="margin-top:20px;">
+          <div class="section-header">AI actions</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Root cause analysis for critical anomalies')"><i class="ti ti-search"></i> Root cause analysis</button>
+            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Alert all field teams')"><i class="ti ti-bell-ringing"></i> Alert field teams</button>
+            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Schedule emergency inspection')"><i class="ti ti-calendar-event"></i> Schedule inspection</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: PREDICT ── -->
+  <div id="tab-predict" style="display:none;" class="fade-in">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px;">
+          <div class="section-header" style="margin:0;">Ecological health projection — 2024–2028</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <select id="scenarioSelect" onchange="updatePrediction()" style="width:auto;margin:0;">
+              <option value="baseline">Baseline — no intervention</option>
+              <option value="partial">Partial restoration</option>
+              <option value="full">Full restoration protocol</option>
+              <option value="worst">Worst-case scenario</option>
+            </select>
+            <span id="scenarioBadge"></span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;" id="predictionBars"></div>
+      </div>
+      <div class="panel">
+        <div class="section-header">Long-term ecosystem services</div>
+        <div id="ltIndicators"></div>
+        <div style="margin-top:20px;">
+          <div class="section-header">Intervention priority matrix</div>
+          <div id="priorityMatrix"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: FACTORS ── -->
+  <div id="tab-factors" style="display:none;" class="fade-in">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+      <div class="panel">
+        <div class="section-header">Degradation driver ranking — AI-weighted</div>
+        <div id="factorBars"></div>
+        <div class="ai-assessment-box" style="margin-top:20px;">
+          <div class="ai-assessment-label"><i class="ti ti-robot"></i> Driver summary</div>
+          <div class="ai-assessment-text">Land-use change and water diversion are the dominant co-occurring stressors, with compounding effects detected in 5 of 7 degraded sites. Pollution and sediment accumulation amplify existing vulnerabilities.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-header">Co-occurrence dependency clusters</div>
+        <div id="dependencyList"></div>
+        <div style="margin-top:20px;">
+          <div class="section-header">Recommended focus areas</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Generate detailed factor intervention plan')"><i class="ti ti-checklist"></i> Generate intervention plan</button>
+            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Export factor analysis report')"><i class="ti ti-file-analytics"></i> Export factor analysis</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app-wrapper -->
+
+<script>
+// ── Clock ──
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clockDisplay').textContent =
+    now.toLocaleString('en-IN', {timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false}) + ' IST';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Data ──
+const statusColors  = { critical:'#ef4444', stressed:'#f59e0b', moderate:'#38b2f5', good:'#4ade80' };
+const statusBadge   = { critical:'badge-danger', stressed:'badge-warning', moderate:'badge-info', good:'badge-success' };
+
+const wetlands = [
+  {name:'Rampur Marsh',      region:'Northern', health:22, water:18, bio:14, habitat:20, pollution:88, hydro:24, trend:-4.2, status:'critical'},
+  {name:'Kaveri Delta Basin',region:'Southern', health:28, water:22, bio:30, habitat:26, pollution:82, hydro:31, trend:-3.8, status:'critical'},
+  {name:'Shola Wetland',     region:'Western',  health:31, water:35, bio:28, habitat:33, pollution:79, hydro:29, trend:-2.9, status:'critical'},
+  {name:'Tungabhadra Flats', region:'Deccan',   health:47, water:51, bio:42, habitat:48, pollution:55, hydro:44, trend:-1.4, status:'stressed'},
+  {name:'Nilgiri Bog',       region:'Southern', health:53, water:58, bio:49, habitat:55, pollution:48, hydro:52, trend:-0.9, status:'stressed'},
+  {name:'Godavari Marshland',region:'Eastern',  health:61, water:65, bio:58, habitat:63, pollution:41, hydro:60, trend:+0.3, status:'stressed'},
+  {name:'Cauvery Floodplain',region:'Southern', health:67, water:70, bio:65, habitat:68, pollution:35, hydro:66, trend:-0.4, status:'moderate'},
+  {name:'Periyar Reserve',   region:'Western',  health:75, water:79, bio:78, habitat:74, pollution:22, hydro:72, trend:+1.1, status:'good'},
+  {name:'Loktak Lake',       region:'Northeast',health:82, water:84, bio:85, habitat:80, pollution:18, hydro:81, trend:+0.8, status:'good'},
+  {name:'Wular Lake',        region:'Northern', health:88, water:90, bio:89, habitat:86, pollution:14, hydro:87, trend:+1.4, status:'good'},
+];
+
+// ── MAP ──
+const mapData = [
+  ['good','stressed','critical','good','stressed','water'],
+  ['water','good','stressed','critical','good','water'],
+  ['stressed','critical','good','good','stressed','good'],
+  ['good','good','stressed','water','good','stressed'],
+  ['critical','good','stressed','good','stressed','good'],
+  ['good','good','good','stressed','good','good'],
+  ['stressed','good','water','good','critical','stressed'],
+];
+
+const mapCellInfo = {
+  critical: ['Rampur Marsh — score 22','Shola Wetland — score 31','Kaveri Delta — score 28','North sector — score 25'],
+  stressed: ['Tungabhadra — score 47','Nilgiri Bog — score 53','Godavari — score 61'],
+  good:     ['Periyar — score 75','Wular — score 88','Loktak — score 82'],
+  water:    ['Open water body'],
+};
+
+function buildMap() {
+  const grid = document.getElementById('mapGrid');
+  const colors = { critical:'#ef4444', stressed:'#f59e0b', good:'#22c55e', water:'#38b2f5' };
+  const opacity = { critical:'0.85', stressed:'0.75', good:'0.6', water:'0.3' };
+  const label   = { critical:'!', stressed:'△', good:'●', water:'~' };
+  mapData.forEach(row => row.forEach(type => {
+    const cell = document.createElement('div');
+    cell.className = 'map-cell';
+    cell.style.background = colors[type];
+    cell.style.opacity = opacity[type];
+    if (type === 'critical') cell.style.animation = 'pulse-critical 2s infinite';
+    cell.innerHTML = `<span>${label[type]}</span>`;
+    cell.onclick = () => {
+      const infos = mapCellInfo[type];
+      const idx = Math.floor(Math.random() * infos.length);
+      const tt = document.getElementById('mapTooltip');
+      tt.style.display = 'block';
+      tt.innerHTML = `<i class="ti ti-info-circle"></i> <strong>${type.toUpperCase()}</strong> &nbsp;·&nbsp; ${infos[idx]}`;
+    };
+    grid.appendChild(cell);
+  }));
+}
+
+function buildAtRisk() {
+  const sorted = [...wetlands].sort((a, b) => a.health - b.health).slice(0, 6);
+  document.getElementById('atRiskList').innerHTML = sorted.map(w => `
+    <div class="wetland-row">
+      <span style="flex-shrink:0;width:8px;height:8px;border-radius:50%;background:${statusColors[w.status]};${w.status==='critical'?'animation:pulse-critical 1.5s infinite;':''}display:inline-block;"></span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${w.name}</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">${w.region} Cluster</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:${w.health<40?'var(--danger)':w.health<65?'var(--warning)':'var(--success)'};">${w.health}</div>
+        <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:${w.trend<0?'var(--danger)':'var(--success)'};">${w.trend>0?'+':''}${w.trend.toFixed(1)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildDataSources() {
+  const sources = [
+    { icon:'ti-droplet', name:'Hydrological records', records:'18,240', status:'live', last:'2 min ago' },
+    { icon:'ti-cloud-rain', name:'Rainfall telemetry', records:'9,102', status:'live', last:'5 min ago' },
+    { icon:'ti-flask', name:'Pollution indicators', records:'4,780', status:'live', last:'1 hr ago' },
+    { icon:'ti-bug', name:'Biodiversity surveys', records:'6,340', status:'synced', last:'6 hr ago' },
+    { icon:'ti-map', name:'Land-use maps', records:'2,108', status:'synced', last:'1 day ago' },
+    { icon:'ti-ruler-measure', name:'Sediment measurements', records:'3,221', status:'synced', last:'3 hr ago' },
+  ];
+  document.getElementById('dataSources').innerHTML =
+    `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      ${sources.map(s => `
+        <div class="datasource-card">
+          <i class="ti ${s.icon}" style="font-size:20px;color:var(--accent-teal);flex-shrink:0;"></i>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary);">${s.name}</div>
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">${s.records} entries · ${s.last}</div>
+          </div>
+          <span class="badge ${s.status==='live'?'badge-success':'badge-info'}" style="flex-shrink:0;">${s.status}</span>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function buildHealthList() {
+  const el = document.getElementById('healthList');
+  const sel = document.getElementById('wetlandSelect');
+  el.innerHTML = wetlands.map((w, i) => `
+    <div class="wetland-row" style="cursor:pointer;" onclick="document.getElementById('wetlandSelect').value='${i}';updateComposition()">
+      <div class="status-ring" style="background:${w.health<40?'rgba(239,68,68,0.12)':w.health<65?'rgba(245,158,11,0.12)':'rgba(74,222,128,0.1)'};color:${w.health<40?'var(--danger)':w.health<65?'var(--warning)':'var(--success)'};">
+        ${w.health}
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${w.name}</div>
+        <div style="height:3px;background:var(--border-subtle);border-radius:3px;margin-top:6px;overflow:hidden;">
+          <div style="height:100%;width:${w.health}%;background:${w.health<40?'var(--danger)':w.health<65?'var(--warning)':'var(--success)'};border-radius:3px;transition:width 1s ease;"></div>
+        </div>
+      </div>
+      <span class="badge ${statusBadge[w.status]}">${w.status}</span>
+    </div>
+  `).join('');
+  sel.innerHTML = wetlands.map((w, i) => `<option value="${i}">${w.name}</option>`).join('');
+  updateComposition();
+}
+
+function updateComposition() {
+  const w = wetlands[document.getElementById('wetlandSelect').value];
+  const dims = [
+    {label:'Water retention',    value:w.water,         color:'var(--accent-blue)'},
+    {label:'Biodiversity index', value:w.bio,           color:'var(--accent-teal)'},
+    {label:'Habitat integrity',  value:w.habitat,       color:'var(--accent-green)'},
+    {label:'Pollution (inv.)',   value:100-w.pollution, color:'#f97316'},
+    {label:'Hydrological flow',  value:w.hydro,         color:'#a78bfa'},
+  ];
+  document.getElementById('compositionBars').innerHTML = dims.map(d => `
+    <div class="factor-bar">
+      <span class="factor-label">${d.label}</span>
+      <div class="factor-track"><div class="factor-fill" style="width:${d.value}%;background:${d.color};"></div></div>
+      <span class="factor-pct">${d.value}</span>
+    </div>
+  `).join('');
+  const msgs = {
+    critical: `Severe ecological stress detected. Multi-factor degradation is accelerating. Immediate hydrological intervention and pollution mitigation are strongly recommended. Biodiversity at high collapse risk.`,
+    stressed:  `Moderate degradation signals present. Water retention and habitat fragmentation are the primary stressors. Monitor seasonal transitions for further decline.`,
+    moderate:  `Ecosystem shows signs of instability but maintains core functions. Preventive conservation measures advised to halt downward trajectory.`,
+    good:      `Wetland is ecologically active and resilient. Maintain current conservation protocols and monitor for encroachment or land-use change in surrounding buffer zones.`
+  };
+  document.getElementById('aiAssessment').textContent = msgs[w.status];
+}
+
+function buildBiodiversity() {
+  const items = [
+    {name:'Avian species count',   value:'14 spp',    risk:'high',   detail:'↓ 38% in 2 yrs'},
+    {name:'Aquatic macrophytes',   value:'Low density',risk:'high',  detail:'Cover < 20%'},
+    {name:'Macroinvertebrates',    value:'Moderate',  risk:'medium', detail:'IBI score 42'},
+    {name:'Fish assemblage',       value:'Declining', risk:'high',   detail:'3 spp extirpated'},
+    {name:'Amphibian breeding',    value:'Irregular', risk:'medium', detail:'Delayed by 3 wks'},
+    {name:'Soil microbiome',       value:'Impaired',  risk:'medium', detail:'Low activity index'},
+    {name:'Migratory use',         value:'Reduced',   risk:'low',    detail:'↓ 15% stopovers'},
+    {name:'Invasive species',      value:'3 detected',risk:'high',   detail:'Water hyacinth +'},
+  ];
+  document.getElementById('bioDivGrid').innerHTML = items.map(i => `
+    <div class="metric-card" style="padding:14px;">
+      <div class="metric-label" style="font-size:10px;">${i.name}</div>
+      <div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">${i.value}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span class="badge ${i.risk==='high'?'badge-danger':i.risk==='medium'?'badge-warning':'badge-info'}">${i.risk} risk</span>
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">${i.detail}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildAnomalies() {
+  const anomalies = [
+    { severity:'critical', site:'Kaveri Delta Basin', type:'Water retention collapse',        signal:'Retention dropped 61% in 18 days despite normal rainfall. Subsurface drainage anomaly suspected.', tags:['hydrological','rapid-onset','soil-sealing'] },
+    { severity:'critical', site:'Rampur Marsh',       type:'Biodiversity crash event',        signal:'Avian and amphibian activity fell to near zero. No correlated temperature or rainfall cause identified.', tags:['biodiversity','unexplained','multi-species'] },
+    { severity:'critical', site:'Shola Wetland',      type:'Sediment pulse — upstream source',signal:'Turbidity spiked 8× baseline. Sediment load consistent with upstream agricultural runoff or construction.', tags:['pollution','sediment','land-use'] },
+    { severity:'moderate', site:'Tungabhadra Flats',  type:'Irregular seasonal lag',          signal:'Ecological activity delayed by 4 weeks vs historical phenological baseline. Possible thermal or hydrological disruption.', tags:['phenology','climate','seasonal'] },
+    { severity:'moderate', site:'Nilgiri Bog',        type:'Vegetation dieback pattern',      signal:'Patchy dieback in 3 quadrants. Spatial distribution inconsistent with drought; chemical stress suspected.', tags:['vegetation','spatial','chemical'] },
+    { severity:'moderate', site:'Godavari Marshland', type:'Groundwater decoupling',          signal:'Surface water stable; groundwater table dropped 2.1m. Loss of hydrological connectivity detected.', tags:['groundwater','hydro','connectivity'] },
+    { severity:'mild',     site:'Cauvery Floodplain', type:'Species composition shift',       signal:'Generalist species replacing specialists. Early indicator of ecosystem simplification.', tags:['biodiversity','compositional','early-warning'] },
+  ];
+  document.getElementById('anomalyList').innerHTML = anomalies.map(a => `
+    <div class="anomaly-item anomaly-${a.severity}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+        <span class="badge ${a.severity==='critical'?'badge-danger':a.severity==='moderate'?'badge-warning':'badge-info'}">${a.severity}</span>
+        <span style="font-size:14px;font-weight:700;color:var(--text-primary);">${a.type}</span>
+        <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);">${a.site}</span>
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:10px;">${a.signal}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">${a.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function buildMiniCharts() {
+  const wc = document.getElementById('waterChart');
+  const vals = [88,84,79,75,71,68,62,55,48,38,32,25];
+  const months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  wc.style.height = '100px';
+  wc.innerHTML = `<div style="display:flex;height:100%;align-items:flex-end;gap:3px;">
+    ${vals.map((v,i)=>`
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <div style="flex:1;width:100%;background:${v<40?'var(--danger)':v<65?'var(--warning)':'var(--accent-blue)'};border-radius:3px 3px 0 0;height:${v}%;opacity:0.8;min-width:1px;"></div>
+        <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">${months[i]}</span>
+      </div>
+    `).join('')}
+  </div>`;
+
+  const sc = document.getElementById('speciesChart');
+  const sv = [65,70,58,72,45,30,68,42,20,55,38,48];
+  sc.style.height = '100px';
+  sc.innerHTML = `<div style="display:flex;height:100%;align-items:flex-end;gap:3px;">
+    ${sv.map((v,i)=>`
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <div style="flex:1;width:100%;background:#a78bfa;border-radius:3px 3px 0 0;height:${v}%;opacity:0.75;min-width:1px;"></div>
+        <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">${months[i]}</span>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+const scenarios = {
+  baseline: { label:'Projected: −32% by 2029', years:[100,91,82,74,68], color:'var(--danger)' },
+  partial:  { label:'Projected: −12% by 2029', years:[100,97,94,92,88], color:'var(--warning)' },
+  full:     { label:'Projected: +8% by 2029',  years:[100,102,104,106,108], color:'var(--success)' },
+  worst:    { label:'Projected: −58% by 2029', years:[100,84,70,57,42], color:'#ff2222' },
+};
+
+function updatePrediction() {
+  const s = document.getElementById('scenarioSelect').value;
+  const sc = scenarios[s];
+  document.getElementById('scenarioBadge').textContent = sc.label;
+  document.getElementById('predictionBars').innerHTML = sc.years.map((v, i) => `
+    <div class="pred-bar-wrap">
+      <div class="pred-bar-track">
+        <div style="width:100%;background:${sc.color};border-radius:4px 4px 0 0;height:${v}%;opacity:${0.4+i*0.14};transition:height 0.8s ease;"></div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px;">202${4+i}</div>
+      <div style="font-family:var(--font-mono);font-size:15px;font-weight:800;color:${v<80?'var(--danger)':v>100?'var(--success)':'var(--warning)'};">${v}%</div>
+    </div>
+  `).join('');
+}
+
+function buildLongTerm() {
+  const indicators = [
+    {label:'Carbon sequestration', current:'-18%', outlook:'declining'},
+    {label:'Flood buffer capacity', current:'-24%', outlook:'declining'},
+    {label:'Water purification',    current:'-31%', outlook:'critical'},
+    {label:'Species richness',      current:'-12%', outlook:'declining'},
+    {label:'Sediment trapping',     current:'-40%', outlook:'critical'},
+  ];
+  document.getElementById('ltIndicators').innerHTML = indicators.map(i => `
+    <div class="indicator-row">
+      <span class="indicator-label">${i.label}</span>
+      <div class="indicator-right">
+        <span class="indicator-value" style="color:${i.outlook==='critical'?'var(--danger)':'var(--warning)'};">${i.current}</span>
+        <span class="badge ${i.outlook==='critical'?'badge-danger':'badge-warning'}">${i.outlook}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildPriorityMatrix() {
+  const items = [
+    {name:'Rampur Marsh',   urgency:'Immediate', impact:'High',   action:'Emergency hydrological restoration'},
+    {name:'Kaveri Delta',   urgency:'Immediate', impact:'High',   action:'Sediment control + water diversion'},
+    {name:'Shola Wetland',  urgency:'Immediate', impact:'High',   action:'Pollution source identification'},
+    {name:'Tungabhadra',    urgency:'Near-term', impact:'Medium', action:'Buffer zone establishment'},
+    {name:'Nilgiri Bog',    urgency:'Near-term', impact:'Medium', action:'Vegetation monitoring'},
+  ];
+  document.getElementById('priorityMatrix').innerHTML = items.map(i => `
+    <div class="priority-item">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <span style="font-size:13px;font-weight:700;color:var(--text-primary);">${i.name}</span>
+        <span class="badge ${i.urgency==='Immediate'?'badge-danger':'badge-warning'}">${i.urgency}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);">${i.action}</div>
+    </div>
+  `).join('');
+}
+
+function buildFactors() {
+  const factors = [
+    {label:'Land-use change',    value:78, color:'var(--danger)'},
+    {label:'Water diversion',    value:71, color:'#f97316'},
+    {label:'Pollution load',     value:65, color:'#f59e0b'},
+    {label:'Sediment accum.',    value:59, color:'var(--warning)'},
+    {label:'Human encroachment', value:52, color:'#a78bfa'},
+    {label:'Climate variation',  value:47, color:'var(--accent-blue)'},
+    {label:'Invasive species',   value:38, color:'var(--accent-teal)'},
+  ];
+  document.getElementById('factorBars').innerHTML = factors.map(f => `
+    <div class="factor-bar">
+      <span class="factor-label">${f.label}</span>
+      <div class="factor-track"><div class="factor-fill" style="width:${f.value}%;background:${f.color};"></div></div>
+      <span class="factor-pct">${f.value}%</span>
+    </div>
+  `).join('');
+
+  const deps = [
+    {cluster:'Land + Sediment → Retention loss',           confidence:'91%', zones:3},
+    {cluster:'Pollution + Biodiversity crash',             confidence:'87%', zones:2},
+    {cluster:'Climate lag + Phenological shift',           confidence:'73%', zones:4},
+    {cluster:'Encroachment + Habitat fragmentation',       confidence:'68%', zones:2},
+  ];
+  document.getElementById('dependencyList').innerHTML = deps.map(d => `
+    <div class="dep-card">
+      <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">${d.cluster}</div>
+      <div style="display:flex;gap:8px;">
+        <span class="badge badge-info">Confidence ${d.confidence}</span>
+        <span class="badge badge-warning">${d.zones} clusters affected</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function switchTab(tab) {
+  ['overview','health','anomaly','predict','factors'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    el.style.display = t === tab ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((btn, i) => {
+    btn.classList.toggle('active', ['overview','health','anomaly','predict','factors'][i] === tab);
+  });
+}
+
+// Init
+buildMap();
+buildAtRisk();
+buildDataSources();
+buildHealthList();
+buildBiodiversity();
+buildAnomalies();
+buildMiniCharts();
+updatePrediction();
+buildLongTerm();
+buildPriorityMatrix();
+buildFactors();
+
+function sendPrompt(msg) {
+  console.log('AI Report Request:', msg);
+  alert('Generating: ' + msg);
+}
+</script>
+</body>
+</html>

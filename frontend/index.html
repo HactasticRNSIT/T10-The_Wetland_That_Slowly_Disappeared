@@ -669,6 +669,65 @@
       color: var(--text-mono);
       background: var(--bg-elevated);
     }
+      /* Floating Chatbot Styles */
+    #chatbot-container {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      z-index: 9999;
+    }
+    #chatbot-toggle {
+      background: #1D9E75;
+      color: white;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    #chatbot-window {
+      position: absolute;
+      bottom: 75px;
+      right: 0;
+      width: 300px;
+      height: 400px;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #chatbot-header {
+      background: #0f172a;
+      color: white;
+      padding: 12px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+    #chatbot-messages {
+      flex: 1;
+      padding: 10px;
+      background: #f8fafc;
+      font-size: 13px;
+    }
+    #chatbot-input-area {
+      padding: 10px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 5px;
+    }
+    #chatbot-input-area input {
+      flex: 1;
+      padding: 5px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -1250,5 +1309,25 @@ function sendPrompt(msg) {
   alert('Generating: ' + msg);
 }
 </script>
+<div id="chatbot-container">
+  <div id="chatbot-window" id="chatWin">
+    <div id="chatbot-header">
+      <span>Eco-Agent</span>
+      <span style="cursor:pointer" onclick="toggleEcoChat()">—</span>
+    </div>
+    <div id="chatbot-messages">
+      <div style="background:#eff6ff; padding:8px; border-radius:8px; margin-bottom:10px;">
+        Hello! How can I help you analyze the wetland data today?
+      </div>
+    </div>
+    <div id="chatbot-input-area">
+      <input type="text" placeholder="Type a message...">
+      <button class="action-btn" style="padding:5px 10px;">Send</button>
+    </div>
+  </div>
+  <div id="chatbot-toggle" onclick="toggleEcoChat()">
+    <i class="ti ti-messages" style="font-size: 24px;"></i>
+  </div>
+</div>
 </body>
 </html>

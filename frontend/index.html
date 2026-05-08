@@ -1,1333 +1,1598 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WetlandAI — Ecological Intelligence Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-  <style>
-    :root {
-      --bg-base:       #050c0f;
-      --bg-surface:    #0a1519;
-      --bg-elevated:   #0f1e24;
-      --bg-hover:      #132229;
-      --border-subtle: #1a2f38;
-      --border-mid:    #234050;
-      --border-accent: #2d5a6e;
-
-      --text-primary:  #d4ede8;
-      --text-secondary:#7ab5a8;
-      --text-dim:      #3d6872;
-      --text-mono:     #a8d4cc;
-
-      --accent-teal:   #1de9b6;
-      --accent-blue:   #38b2f5;
-      --accent-green:  #4ade80;
-      --danger:        #ff4d4d;
-      --warning:       #fbbf24;
-      --success:       #4ade80;
-      --info:          #38b2f5;
-
-      --font-display:  'Syne', sans-serif;
-      --font-mono:     'JetBrains Mono', monospace;
-      --font-body:     'DM Sans', sans-serif;
-
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 16px;
-      --radius-xl: 22px;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: var(--font-body);
-      background-color: var(--bg-base);
-      color: var(--text-primary);
-      line-height: 1.6;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* Noise texture overlay */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.6;
-    }
-
-    /* Radial glow at top */
-    body::after {
-      content: '';
-      position: fixed;
-      top: -200px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 900px;
-      height: 500px;
-      background: radial-gradient(ellipse, rgba(29, 233, 182, 0.04) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .app-wrapper {
-      position: relative;
-      z-index: 1;
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 2rem 2rem 4rem;
-    }
-
-    /* ── HEADER ── */
-    .header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 2.5rem;
-      padding-bottom: 2rem;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .logo-block {}
-
-    .logo {
-      font-family: var(--font-display);
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo-icon {
-      width: 38px;
-      height: 38px;
-      background: linear-gradient(135deg, #1de9b6 0%, #0891b2 100%);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: #050c0f;
-      flex-shrink: 0;
-    }
-
-    .logo-sub {
-      font-family: var(--font-body);
-      font-size: 13px;
-      font-weight: 400;
-      color: var(--text-dim);
-      margin-top: 6px;
-      letter-spacing: 0.02em;
-    }
-
-    .header-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 10px;
-    }
-
-    .live-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255, 77, 77, 0.08);
-      border: 1px solid rgba(255, 77, 77, 0.2);
-      border-radius: 50px;
-      padding: 6px 14px;
-    }
-
-    .live-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--danger);
-      animation: pulse-danger 1.5s infinite;
-    }
-
-    .live-label {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--danger);
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-
-    .timestamp {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-dim);
-      letter-spacing: 0.05em;
-    }
-
-    /* ── TABS ── */
-    .tab-nav {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 2rem;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-xl);
-      padding: 5px;
-    }
-
-    .tab {
-      padding: 9px 18px;
-      border: none;
-      border-radius: var(--radius-lg);
-      font-family: var(--font-body);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      background: transparent;
-      color: var(--text-dim);
-      transition: all 0.25s ease;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      white-space: nowrap;
-    }
-
-    .tab:hover:not(.active) {
-      color: var(--text-secondary);
-      background: var(--bg-hover);
-    }
-
-    .tab.active {
-      background: linear-gradient(135deg, #0d2d38 0%, #0d2030 100%);
-      color: var(--accent-teal);
-      border: 1px solid var(--border-accent);
-      box-shadow: 0 0 20px rgba(29, 233, 182, 0.08), inset 0 1px 0 rgba(29, 233, 182, 0.15);
-    }
-
-    .tab i { font-size: 15px; }
-
-    /* ── PANEL / CARD ── */
-    .panel {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-xl);
-      padding: 1.5rem;
-    }
-
-    .metric-card {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem 1.5rem;
-      transition: border-color 0.25s, transform 0.25s;
-      cursor: default;
-    }
-
-    .metric-card:hover {
-      border-color: var(--border-accent);
-      transform: translateY(-2px);
-    }
-
-    .metric-label {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--text-dim);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .metric-value {
-      font-family: var(--font-display);
-      font-size: 36px;
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      line-height: 1;
-    }
-
-    .metric-sub {
-      font-size: 12px;
-      color: var(--text-dim);
-      margin-top: 8px;
-      font-weight: 400;
-    }
-
-    /* ── SECTION HEADER ── */
-    .section-header {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-dim);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .section-header::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border-subtle);
-    }
-
-    /* ── BADGE ── */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 9px;
-      border-radius: 50px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .badge-danger  { background: rgba(255, 77, 77, 0.1);   color: #ff7070; border: 1px solid rgba(255,77,77,0.2); }
-    .badge-warning { background: rgba(251,191,36, 0.1);    color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
-    .badge-success { background: rgba(74, 222, 128, 0.08); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
-    .badge-info    { background: rgba(56, 178, 245, 0.1);  color: #38b2f5; border: 1px solid rgba(56,178,245,0.2); }
-
-    /* ── MAP GRID ── */
-    .map-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 5px;
-    }
-
-    .map-cell {
-      aspect-ratio: 1;
-      border-radius: 7px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .map-cell::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 100%);
-    }
-
-    .map-cell:hover {
-      transform: scale(1.15);
-      z-index: 10;
-    }
-
-    .map-cell span {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 700;
-      color: rgba(255,255,255,0.9);
-      position: relative;
-      z-index: 1;
-    }
-
-    /* ── FACTOR BARS ── */
-    .factor-bar {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-
-    .factor-label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      width: 140px;
-      flex-shrink: 0;
-    }
-
-    .factor-track {
-      flex: 1;
-      height: 6px;
-      background: var(--bg-base);
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .factor-fill {
-      height: 100%;
-      border-radius: 10px;
-      transition: width 1s cubic-bezier(0.25, 1, 0.5, 1);
-    }
-
-    .factor-pct {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-mono);
-      min-width: 30px;
-      text-align: right;
-    }
-
-    /* ── WETLAND ROW ── */
-    .wetland-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 11px 8px;
-      border-bottom: 1px solid var(--border-subtle);
-      transition: background 0.2s;
-    }
-
-    .wetland-row:hover {
-      background: var(--bg-hover);
-      border-radius: 8px;
-    }
-
-    /* ── STATUS RING ── */
-    .status-ring {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 700;
-    }
-
-    /* ── ANOMALY ITEM ── */
-    .anomaly-item {
-      padding: 16px;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      background: var(--bg-elevated);
-      margin-bottom: 10px;
-      transition: border-color 0.2s;
-    }
-
-    .anomaly-item:hover { border-color: var(--border-mid); }
-
-    .anomaly-critical { border-left: 3px solid var(--danger); }
-    .anomaly-moderate { border-left: 3px solid var(--warning); }
-    .anomaly-mild     { border-left: 3px solid var(--info); }
-
-    /* ── ACTION BUTTON ── */
-    .action-btn {
-      padding: 9px 16px;
-      border: 1px solid var(--border-mid);
-      border-radius: var(--radius-md);
-      font-family: var(--font-body);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      background: var(--bg-elevated);
-      color: var(--text-secondary);
-      transition: all 0.2s;
-    }
-
-    .action-btn:hover {
-      background: var(--bg-hover);
-      border-color: var(--accent-teal);
-      color: var(--accent-teal);
-    }
-
-    /* ── DATA SOURCE CARD ── */
-    .datasource-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      background: var(--bg-elevated);
-      transition: border-color 0.2s;
-    }
-    .datasource-card:hover { border-color: var(--border-mid); }
-
-    /* ── SELECT ── */
-    select {
-      width: 100%;
-      padding: 10px 14px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-mid);
-      background: var(--bg-elevated);
-      color: var(--text-primary);
-      font-family: var(--font-body);
-      font-size: 13px;
-      margin-bottom: 20px;
-      outline: none;
-      cursor: pointer;
-    }
-
-    select:focus { border-color: var(--accent-teal); }
-
-    /* ── TOOLTIP ── */
-    .map-tooltip {
-      display: none;
-      margin-top: 16px;
-      padding: 12px 16px;
-      background: rgba(29, 233, 182, 0.06);
-      border: 1px solid rgba(29, 233, 182, 0.2);
-      border-radius: var(--radius-md);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--accent-teal);
-      line-height: 1.5;
-    }
-
-    /* ── AI ASSESSMENT ── */
-    .ai-assessment-box {
-      padding: 14px 16px;
-      background: rgba(29, 233, 182, 0.04);
-      border: 1px solid rgba(29, 233, 182, 0.12);
-      border-radius: var(--radius-md);
-      margin-top: 16px;
-    }
-
-    .ai-assessment-label {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      font-weight: 600;
-      color: var(--accent-teal);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .ai-assessment-text {
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.7;
-    }
-
-    /* ── SCROLLABLE ── */
-    .scrollable {
-      overflow-y: auto;
-      max-height: 380px;
-    }
-
-    .scrollable::-webkit-scrollbar { width: 4px; }
-    .scrollable::-webkit-scrollbar-track { background: transparent; }
-    .scrollable::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 10px; }
-
-    /* ── MINI CHART ── */
-    .mini-chart-container {
-      height: 64px;
-      padding: 8px 0;
-    }
-
-    /* ── ANIMATIONS ── */
-    @keyframes pulse-danger {
-      0%   { box-shadow: 0 0 0 0 rgba(255,77,77,0.7); }
-      70%  { box-shadow: 0 0 0 8px rgba(255,77,77,0); }
-      100% { box-shadow: 0 0 0 0 rgba(255,77,77,0); }
-    }
-
-    @keyframes pulse-critical {
-      0%   { box-shadow: 0 0 0 0 rgba(255,77,77,0.7); }
-      70%  { box-shadow: 0 0 0 6px rgba(255,77,77,0); }
-      100% { box-shadow: 0 0 0 0 rgba(255,77,77,0); }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .fade-in { animation: fadeIn 0.4s ease forwards; }
-
-    /* ── MAP LEGEND ── */
-    .map-legend {
-      display: flex;
-      gap: 16px;
-      margin-top: 18px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border-subtle);
-      font-size: 12px;
-      color: var(--text-secondary);
-      flex-wrap: wrap;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-    }
-
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 3px;
-    }
-
-    /* ── INDICATOR ROW ── */
-    .indicator-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 13px 0;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .indicator-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    .indicator-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .indicator-value {
-      font-family: var(--font-mono);
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    /* ── PRIORITY ITEM ── */
-    .priority-item {
-      padding: 13px 0;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    /* ── DEPENDENCY CARD ── */
-    .dep-card {
-      padding: 14px;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      margin-bottom: 10px;
-      background: var(--bg-elevated);
-      border-left: 3px solid var(--border-accent);
-    }
-
-    /* ── PREDICTION BAR ── */
-    .pred-bar-wrap { text-align: center; }
-    .pred-bar-track {
-      height: 120px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      margin-bottom: 10px;
-      background: var(--bg-base);
-      border-radius: 8px;
-      padding: 0 8px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    /* ── GLOW TEXT ── */
-    .glow-teal { color: var(--accent-teal); text-shadow: 0 0 20px rgba(29, 233, 182, 0.4); }
-    .glow-danger { color: var(--danger); text-shadow: 0 0 20px rgba(255, 77, 77, 0.4); }
-    .glow-warning { color: var(--warning); text-shadow: 0 0 15px rgba(251,191,36,0.3); }
-
-    /* ── TAG ── */
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--text-dim);
-      background: var(--bg-base);
-      border: 1px solid var(--border-subtle);
-    }
-
-    /* ── SCENARIO BADGE ── */
-    #scenarioBadge {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 600;
-      padding: 6px 14px;
-      border-radius: 50px;
-      border: 1px solid var(--border-mid);
-      color: var(--text-mono);
-      background: var(--bg-elevated);
-    }
-      /* Floating Chatbot Styles */
-    #chatbot-container {
-      position: fixed;
-      bottom: 25px;
-      right: 25px;
-      z-index: 9999;
-    }
-    #chatbot-toggle {
-      background: #1D9E75;
-      color: white;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    #chatbot-window {
-      position: absolute;
-      bottom: 75px;
-      right: 0;
-      width: 300px;
-      height: 400px;
-      background: white;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 12px 48px rgba(0,0,0,0.15);
-      display: none;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    #chatbot-header {
-      background: #0f172a;
-      color: white;
-      padding: 12px;
-      font-weight: bold;
-      display: flex;
-      justify-content: space-between;
-    }
-    #chatbot-messages {
-      flex: 1;
-      padding: 10px;
-      background: #f8fafc;
-      font-size: 13px;
-    }
-    #chatbot-input-area {
-      padding: 10px;
-      border-top: 1px solid #e2e8f0;
-      display: flex;
-      gap: 5px;
-    }
-    #chatbot-input-area input {
-      flex: 1;
-      padding: 5px;
-      border: 1px solid #cbd5e1;
-      border-radius: 4px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>India Ramsar Wetlands — AI Ecological Monitor + Interactive Map</title>
+
+    <!-- Leaflet CSS & JS — unchanged for map functionality -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!--
+    ============================================================
+    DARK THEME DESIGN SYSTEM
+    ============================================================
+    Aesthetic direction: "Deep Ocean Research Terminal"
+    Tone: scientific, authoritative, refined dark UI
+
+    Font pairing:
+      • "Syne" (Google Fonts) — geometric, distinctive display font
+        for headings and metric values. Bold, modern, memorable.
+      • "IBM Plex Sans" — neutral, highly legible body font designed
+        for data-dense interfaces. Excellent at small sizes.
+
+    Color philosophy:
+      • Base layer: near-black #0d1117 (GitHub dark, easy on eyes)
+      • Card surface: #161b22 — subtle 1-step lift for hierarchy
+      • Elevated surface: #1c2333 — hover states and active elements
+      • Primary accent: #2dd4bf (teal-400) — ecological / water theme
+      • Secondary accent: #38bdf8 (sky-400) — links and interactive
+      • All risk colors preserved but luminance-adjusted for dark context
+
+    Spacing philosophy:
+      • Generous padding (1.5–2rem) to avoid claustrophobic density
+      • 1px borders using semi-transparent white at 8% opacity
+        creates depth without harsh lines
+
+    Accessibility:
+      • Minimum contrast ratio 4.5:1 for body text on dark surfaces
+      • Focus outlines maintained for keyboard navigation
+      • ARIA labels on interactive elements preserved
+    ============================================================
+    -->
+
+    <!-- Typography: Syne for display + IBM Plex Sans for body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* ============================================================
+           CSS CUSTOM PROPERTIES — Dark Design Tokens
+           ============================================================ */
+        :root {
+            /* --- Surfaces (layered z-depth using brightness) --- */
+            --bg-base:      #0d1117;   /* page background */
+            --bg-card:      #161b22;   /* card / panel surface */
+            --bg-elevated:  #1c2333;   /* hover, active, inputs */
+            --bg-overlay:   #21262d;   /* tooltips, dropdowns */
+
+            /* --- Borders (subtle, not harsh) --- */
+            --border:       rgba(255, 255, 255, 0.08);
+            --border-focus: rgba(45, 212, 191, 0.5);
+
+            /* --- Text hierarchy --- */
+            --text-primary:   #e6edf3;   /* main content — near-white */
+            --text-secondary: #8b949e;   /* metadata, labels */
+            --text-muted:     #484f58;   /* placeholder, disabled */
+            --text-accent:    #2dd4bf;   /* primary accent — teal */
+            --text-link:      #38bdf8;   /* interactive / sky blue */
+
+            /* --- Accent / Brand --- */
+            --accent-primary:   #2dd4bf;   /* teal — water / ecology */
+            --accent-secondary: #38bdf8;   /* sky blue */
+            --accent-glow:      rgba(45, 212, 191, 0.15);
+
+            /* --- Risk status palette (dark-optimized) ---
+               Colors are slightly lighter/more vivid than light-theme
+               variants to maintain legibility on dark backgrounds */
+            --risk-critical:  #f87171;   /* red-400 */
+            --risk-high:      #fb923c;   /* orange-400 */
+            --risk-moderate:  #60a5fa;   /* blue-400 */
+            --risk-low:       #4ade80;   /* green-400 */
+            --risk-stable:    #34d399;   /* emerald-400 */
+
+            /* --- Shadows — dark theme needs glow, not drop shadow --- */
+            --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+            --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
+            --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
+            --glow-accent: 0 0 20px rgba(45,212,191,0.12);
+
+            /* --- Layout --- */
+            --radius-lg: 12px;
+            --radius-md: 8px;
+            --radius-sm: 6px;
+        }
+
+        /* ============================================================
+           RESET & BASE
+           ============================================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Subtle grid-texture background for depth */
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            /* Subtle dot-grid for texture — barely visible */
+            background-image: radial-gradient(
+                circle, rgba(255,255,255,0.03) 1px, transparent 1px
+            );
+            background-size: 32px 32px;
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* ============================================================
+           LAYOUT WRAPPER
+           ============================================================ */
+        .dash {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        .header {
+            margin-bottom: 2rem;
+            /* Glowing left accent bar instead of a plain bottom border */
+            padding: 1.5rem 0 1.5rem 1.5rem;
+            border-left: 3px solid var(--accent-primary);
+            position: relative;
+        }
+        /* Ambient glow behind the accent bar */
+        .header::before {
+            content: '';
+            position: absolute;
+            left: -1px;
+            top: 0;
+            height: 100%;
+            width: 120px;
+            background: linear-gradient(90deg, var(--accent-glow), transparent);
+            pointer-events: none;
+        }
+        .header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        /* Teal highlight on the title accent word */
+        .header h1 .accent { color: var(--accent-primary); }
+        .header p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-weight: 300;
+            letter-spacing: 0.02em;
+        }
+
+        /* ============================================================
+           METRICS GRID
+           ============================================================ */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 2rem;
+        }
+        .metric {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            /* Subtle top highlight line — simulates light source from above */
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .metric::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+        }
+        .metric:hover {
+            border-color: rgba(45,212,191,0.2);
+            box-shadow: var(--shadow-md), var(--glow-accent);
+        }
+        .metric-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            margin-bottom: 6px;
+        }
+        /* Syne for the big numbers — feels authoritative and data-forward */
+        .metric-val {
+            font-family: 'Syne', sans-serif;
+            font-size: 30px;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        /* ============================================================
+           TABS
+           ============================================================ */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 2rem;
+            /* Dark pill container */
+            background: var(--bg-card);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            width: fit-content;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 8px 20px;
+            font-size: 13px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 500;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            color: var(--text-secondary);
+            background: transparent;
+            transition: all 0.18s ease;
+        }
+        .tab.active {
+            /* Active tab lifts off the container */
+            background: var(--bg-elevated);
+            color: var(--text-accent);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+            border: 1px solid rgba(45,212,191,0.25);
+        }
+        .tab:hover:not(.active) {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.04);
+        }
+        .tab:focus-visible {
+            outline: 2px solid var(--border-focus);
+            outline-offset: 2px;
+        }
+
+        /* ============================================================
+           PANEL TRANSITIONS
+           ============================================================ */
+        .panel { display: none; animation: fadeSlide 0.22s ease; }
+        .panel.active { display: block; }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============================================================
+           CARDS — universal dark surface
+           ============================================================ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+        /* Faint top shimmer line on every card */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+        }
+        .chart-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        /* ============================================================
+           LAYOUT HELPERS
+           ============================================================ */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        /* ============================================================
+           MAP CONTAINER
+           — Map styles are carefully scoped so Leaflet internals
+             are not disrupted. Only the wrapper and overlay panel
+             are re-skinned.
+           ============================================================ */
+        .map-container {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1.25rem;
+            position: relative;
+            z-index: 1;
+        }
+        /* Map canvas height — unchanged from original */
+        #indiaMap {
+            height: 540px;
+            width: 100%;
+            /* Dark tile variant is used in JS — background matches */
+            background: #1a2332;
+            z-index: 1;
+        }
+        /* Leaflet popup dark skin */
+        .leaflet-popup-content-wrapper {
+            background: var(--bg-overlay) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 10px !important;
+            font-family: 'IBM Plex Sans', sans-serif !important;
+            box-shadow: var(--shadow-lg) !important;
+        }
+        .leaflet-popup-tip {
+            background: var(--bg-overlay) !important;
+        }
+        .leaflet-tooltip {
+            background: var(--bg-overlay) !important;
+            border: 1px solid var(--border) !important;
+            color: var(--text-primary) !important;
+            font-family: 'IBM Plex Sans', sans-serif !important;
+            font-size: 12px !important;
+            border-radius: 6px !important;
+        }
+        /* Marker hover scale — unchanged */
+        .custom-marker div {
+            transition: transform 0.05s ease, box-shadow 0.1s;
+        }
+        .custom-marker:hover div {
+            transform: scale(1.25);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 0 10px rgba(45,212,191,0.4);
+        }
+
+        /* ============================================================
+           MAP INFO PANEL (hover details)
+           ============================================================ */
+        .map-info-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+            margin-top: 1rem;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.15s ease;
+        }
+        .map-info-panel h4 {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.85rem;
+            color: var(--text-accent);
+            border-left: 3px solid var(--accent-primary);
+            padding-left: 12px;
+        }
+        .map-info-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.65rem;
+            font-size: 0.82rem;
+        }
+        .map-info-details div {
+            /* Each data cell gets a slightly elevated background */
+            background: var(--bg-elevated);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            transition: background 0.1s;
+        }
+        .map-info-details div:hover {
+            background: var(--bg-overlay);
+        }
+        .info-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.06em;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            display: block;
+        }
+        .info-value {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-top: 3px;
+        }
+        /* Inline risk badge on the map panel */
+        .risk-badge-map {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        /* Legend strip below the map */
+        .map-legend {
+            margin-top: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.7rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        .map-legend span { display: flex; align-items: center; gap: 4px; }
+
+        /* ============================================================
+           RISK BADGES — for table and popups
+           ============================================================ */
+        .badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        /* Dark-optimized badge backgrounds — semi-transparent tints */
+        .badge-critical  { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+        .badge-high      { background: rgba(251,146,60,0.15);  color: #fb923c; border: 1px solid rgba(251,146,60,0.3);  }
+        .badge-moderate  { background: rgba(96,165,250,0.15);  color: #60a5fa; border: 1px solid rgba(96,165,250,0.3);  }
+        .badge-low       { background: rgba(74,222,128,0.15);  color: #4ade80; border: 1px solid rgba(74,222,128,0.3);  }
+        .badge-stable    { background: rgba(52,211,153,0.15);  color: #34d399; border: 1px solid rgba(52,211,153,0.3);  }
+
+        /* ============================================================
+           DATA TABLE
+           ============================================================ */
+        .table-wrap { overflow-x: auto; }
+        table#wetlandTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        table#wetlandTable thead th {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            /* Sticky header for long tables */
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        table#wetlandTable tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.12s;
+        }
+        table#wetlandTable tbody tr:hover {
+            background: var(--bg-elevated);
+        }
+        table#wetlandTable tbody td {
+            padding: 10px 12px;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+        table#wetlandTable tbody td:first-child {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+        /* Wetland name column — bold and teal on hover */
+        table#wetlandTable tbody td:nth-child(2) {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* ============================================================
+           SEARCH / FILTER ROW
+           ============================================================ */
+        .search-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+        }
+        .search-row input,
+        .search-row select {
+            padding: 9px 16px;
+            border-radius: 40px;
+            /* Dark input styling */
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.83rem;
+            transition: border-color 0.18s, box-shadow 0.18s;
+            outline: none;
+        }
+        .search-row input::placeholder { color: var(--text-muted); }
+        .search-row input:focus,
+        .search-row select:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(45,212,191,0.1);
+        }
+        /* Fix select arrow color in dark mode */
+        .search-row select option {
+            background: var(--bg-overlay);
+            color: var(--text-primary);
+        }
+
+        /* ============================================================
+           SMALL BUTTON
+           ============================================================ */
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 11px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+            letter-spacing: 0.03em;
+        }
+        .btn-sm:hover {
+            background: var(--bg-overlay);
+            color: var(--text-accent);
+            border-color: rgba(45,212,191,0.3);
+        }
+
+        /* ============================================================
+           RAMSAR GRID (color-coded wetland squares)
+           ============================================================ */
+        .ramsar-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 8px 0;
+        }
+        .grid-square {
+            width: 30px;
+            height: 30px;
+            border-radius: var(--radius-sm);
+            transition: transform 0.1s, box-shadow 0.1s;
+            cursor: pointer;
+            /* Dark-mode squares need a subtle dark border to pop */
+            border: 1px solid rgba(0,0,0,0.3);
+            opacity: 0.85;
+        }
+        .grid-square:hover {
+            transform: scale(1.15);
+            opacity: 1;
+            box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px rgba(45,212,191,0.4);
+        }
+
+        /* ============================================================
+           AI PANEL
+           ============================================================ */
+        .ai-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+        }
+        .ai-box p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+            font-size: 0.88rem;
+        }
+        .ai-prompt {
+            display: flex;
+            gap: 10px;
+        }
+        .ai-prompt input {
+            flex: 1;
+            padding: 10px 18px;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.18s, box-shadow 0.18s;
+        }
+        .ai-prompt input::placeholder { color: var(--text-muted); }
+        .ai-prompt input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(45,212,191,0.1);
+        }
+        .ai-prompt button {
+            padding: 10px 22px;
+            border-radius: 40px;
+            border: none;
+            background: var(--accent-primary);
+            color: #0d1117;    /* dark text on teal — great contrast */
+            font-family: 'Syne', sans-serif;
+            font-size: 0.83rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        .ai-prompt button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .ai-response {
+            margin-top: 1.5rem;
+            background: var(--bg-elevated);
+            border: 1px solid rgba(45,212,191,0.2);
+            border-left: 3px solid var(--accent-primary);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        /* ============================================================
+           STRESSORS & CRITICAL LISTS
+           ============================================================ */
+        #stressors div, #critical-list div {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        #stressors div:last-child,
+        #critical-list div:last-child { border-bottom: none; }
+        #stressors strong, #critical-list strong {
+            color: var(--text-primary);
+        }
+
+        /* ============================================================
+           DETAIL MODAL (inline)
+           ============================================================ */
+        .detail-modal {
+            background: var(--bg-elevated);
+            border: 1px solid rgba(45,212,191,0.2);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+        }
+        .detail-modal h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        .detail-modal p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        /* ============================================================
+           HEALTH BAR (in table)
+           ============================================================ */
+        .health-bar {
+            /* Dark base track */
+            background: var(--bg-elevated) !important;
+            border-radius: 4px;
+            margin-bottom: 2px;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 768px) {
+            body { padding: 1rem; }
+            .two-col { grid-template-columns: 1fr; }
+            .tabs {
+                width: 100%;
+                justify-content: center;
+            }
+            .header h1 { font-size: 20px; }
+            .metric-val { font-size: 24px; }
+        }
+
+        /* ============================================================
+           SCROLLBAR (WebKit) — dark-themed
+           ============================================================ */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-elevated);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: #30363d; }
+
+        /* ============================================================
+           CHART.JS — global dark override injected via JS
+           (see script section for Chart.defaults)
+           ============================================================ */
+        /* ============================================================
+       FLOATING AGENTIC CHATBOT (INTEGRATED)
+       ============================================================ */
+
+    /* The Floating Logo (Step 1a) */
+    #chat-logo {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: var(--accent-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bg-base); /* Contrast text */
+        cursor: pointer;
+        box-shadow: var(--shadow-lg), 0 0 20px rgba(45, 212, 191, 0.3);
+        z-index: 2000;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    #chat-logo:hover { transform: scale(1.1) rotate(5deg); }
+
+    /* The Chat Window (Step 1b) */
+    #chat-window {
+        position: fixed;
+        bottom: 105px;
+        right: 30px;
+        width: 380px;
+        height: 550px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        display: none; /* Controlled by JS */
+        flex-direction: column;
+        box-shadow: var(--shadow-lg);
+        z-index: 1999;
+        overflow: hidden;
+        animation: fadeSlide 0.3s ease;
+    }
+
+    .chat-header {
+        background: var(--bg-elevated);
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chat-header h3 {
+        font-family: 'Syne', sans-serif;
+        font-size: 14px;
+        color: var(--accent-primary);
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    #messages {
+        flex: 1;
+        padding: 1.25rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: var(--bg-base);
+    }
+
+    .u-msg {
+        align-self: flex-end;
+        background: var(--accent-primary);
+        color: var(--bg-base);
+        padding: 10px 14px;
+        border-radius: 12px 12px 0 12px;
+        font-size: 13px;
+        max-width: 80%;
+        font-weight: 500;
+    }
+
+    .a-msg {
+        align-self: flex-start;
+        background: var(--bg-elevated);
+        color: var(--text-primary);
+        padding: 10px 14px;
+        border-radius: 12px 12px 12px 0;
+        font-size: 13px;
+        max-width: 85%;
+        border: 1px solid var(--border);
+        line-height: 1.5;
+    }
+
+    .chat-input-area {
+        padding: 1rem;
+        background: var(--bg-card);
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 8px;
+    }
+
+    .chat-input-area input {
+        flex: 1;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        padding: 10px 15px;
+        border-radius: 40px;
+        outline: none;
+        font-size: 13px;
+    }
+
+    .chat-input-area button {
+        background: var(--accent-primary);
+        border: none;
+        color: var(--bg-base);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.2s;
+    }
+    </style>
 </head>
 <body>
+<div class="dash">
 
-<div class="app-wrapper">
+  <!-- ===== HEADER ===== -->
+  <div class="header">
+    <h1>
+      <span style="font-size:1.2em;">🌿</span>
+      India Ramsar Wetlands — <span class="accent">AI Ecological Monitor</span>
+    </h1>
+    <p>98 Ramsar-designated wetlands &nbsp;·&nbsp; Health scores, degradation risk &amp; biodiversity analysis &nbsp;·&nbsp; Interactive Map Explorer</p>
+  </div>
 
-  <!-- HEADER -->
-  <header class="header">
-    <div class="logo-block">
-      <div class="logo">
-        <div class="logo-icon"><i class="ti ti-droplet-filled"></i></div>
-        WetlandAI
-      </div>
-      <div class="logo-sub">Ecological intelligence system &nbsp;·&nbsp; multi-source degradation analysis</div>
+  <!-- ===== METRICS ===== -->
+  <div class="metrics" id="metrics"></div>
+
+  <!-- ===== TABS ===== -->
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('overview')">📊 Overview</button>
+    <button class="tab" onclick="setTab('map')">🗺️ Map — Ramsar Sites</button>
+    <button class="tab" onclick="setTab('catalog')">📋 Wetland Catalog</button>
+    <button class="tab" onclick="setTab('analytics')">📈 Analytics</button>
+    <button class="tab" onclick="setTab('ai')">🤖 AI Analysis</button>
+  </div>
+
+  <!-- ===== OVERVIEW PANEL ===== -->
+  <div class="panel active" id="panel-overview">
+    <div class="two-col">
+      <div class="card"><div class="chart-label">Health Score Distribution</div><canvas id="distChart" height="180"></canvas></div>
+      <div class="card"><div class="chart-label">Degradation by State / UT</div><canvas id="stateChart" height="180"></canvas></div>
     </div>
-    <div class="header-right">
-      <div class="live-pill">
-        <div class="live-dot"></div>
-        <span class="live-label">Live · 3 critical zones</span>
-      </div>
-      <div class="timestamp" id="clockDisplay"></div>
+    <div class="card" style="margin: 1.25rem 0;">
+      <div class="chart-label">Ecological Stress Trends (2019–2024)</div>
+      <canvas id="trendChart" height="120"></canvas>
     </div>
-  </header>
-
-  <!-- TAB NAV -->
-  <nav class="tab-nav">
-    <button class="tab active" onclick="switchTab('overview')"><i class="ti ti-layout-dashboard"></i> Overview</button>
-    <button class="tab" onclick="switchTab('health')"><i class="ti ti-activity-heartbeat"></i> Health Scores</button>
-    <button class="tab" onclick="switchTab('anomaly')"><i class="ti ti-alert-octagon"></i> Anomalies</button>
-    <button class="tab" onclick="switchTab('predict')"><i class="ti ti-chart-line"></i> Predictive Model</button>
-    <button class="tab" onclick="switchTab('factors')"><i class="ti ti-adjustments-alt"></i> Factor Analysis</button>
-  </nav>
-
-  <!-- ── TAB: OVERVIEW ── -->
-  <div id="tab-overview" class="fade-in">
-
-    <!-- Metrics row -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:1.5rem;">
-      <div class="metric-card">
-        <div class="metric-label"><i class="ti ti-map-pin"></i> Wetlands monitored</div>
-        <div class="metric-value glow-teal">24</div>
-        <div class="metric-sub">Across 6 regional clusters</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label"><i class="ti ti-alert-triangle"></i> Critical zones</div>
-        <div class="metric-value glow-danger">3</div>
-        <div class="metric-sub">Requires immediate intervention</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label"><i class="ti ti-leaf"></i> Avg ecosystem score</div>
-        <div class="metric-value glow-warning">54<span style="font-size:16px;color:var(--text-dim);font-weight:500;">/100</span></div>
-        <div class="metric-sub">↓ 8.2% variance from Q4 baseline</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label"><i class="ti ti-database"></i> Data sources</div>
-        <div class="metric-value" style="color:var(--text-primary);">6</div>
-        <div class="metric-sub">Integrated AI data pipelines</div>
+    <div class="card">
+      <div class="chart-label">🌾 Ramsar Sites Grid — 98 Wetlands (color-coded by risk)</div>
+      <div class="ramsar-grid-wrapper" style="max-height:280px; overflow-y:auto;">
+        <div class="ramsar-grid" id="ramsarGrid"></div>
       </div>
     </div>
-
-    <!-- Map + Risk -->
-    <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
-      <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-          <div class="section-header" style="margin:0;">Vulnerability spatial map</div>
-          <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);">click cell → telemetry</span>
-        </div>
-        <div class="map-grid" id="mapGrid"></div>
-        <div class="map-legend">
-          <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>Stable</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Stressed</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span>Critical</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#38b2f5;opacity:0.5;"></span>Open Water</div>
-        </div>
-        <div class="map-tooltip" id="mapTooltip"></div>
-      </div>
-
-      <div class="panel">
-        <div class="section-header">Highest risk prioritization</div>
-        <div class="scrollable" id="atRiskList"></div>
-      </div>
-    </div>
-
-    <!-- Data Sources -->
-    <div class="panel">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
-        <div class="section-header" style="margin:0;">Live infrastructure pipelines</div>
-        <button class="action-btn" onclick="sendPrompt('Full pipeline status report')"><i class="ti ti-refresh"></i> Refresh</button>
-      </div>
-      <div id="dataSources"></div>
+    <div class="two-col" style="margin-top:1.25rem;">
+      <div class="card"><div class="chart-label">Top Stressor Factors</div><div id="stressors"></div></div>
+      <div class="card"><div class="chart-label">Critical Sites Needing Attention</div><div id="critical-list"></div></div>
     </div>
   </div>
 
-  <!-- ── TAB: HEALTH ── -->
-  <div id="tab-health" style="display:none;" class="fade-in">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
-      <div class="panel">
-        <div class="section-header">Wetland health index — full inventory</div>
-        <div id="healthList" class="scrollable"></div>
-      </div>
-      <div class="panel">
-        <div class="section-header">Health score composition</div>
-        <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;font-family:var(--font-mono);">Select ecosystem to inspect attributes:</p>
-        <select id="wetlandSelect" onchange="updateComposition()"></select>
-        <div id="compositionBars"></div>
-        <div class="ai-assessment-box">
-          <div class="ai-assessment-label"><i class="ti ti-robot"></i> AI assessment</div>
-          <div class="ai-assessment-text" id="aiAssessment"></div>
+  <!-- ===== MAP PANEL — map code unchanged ===== -->
+  <div class="panel" id="panel-map">
+    <div class="map-container">
+      <div id="indiaMap"></div>
+    </div>
+    <div class="map-info-panel" id="mapHoverPanel">
+      <h4><span>📍</span> Wetland Site Inspector</h4>
+      <div class="map-info-details" id="hoverDetails">
+        <div style="grid-column:1/-1; text-align:center; color:var(--text-secondary);">
+          👆 Hover over any marker → detailed insights appear here
         </div>
       </div>
     </div>
-
-    <div class="panel">
-      <div class="section-header">Biodiversity indicators — all taxa</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;" id="bioDivGrid"></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
-      <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-          <div class="section-header" style="margin:0;">Water quality trend — 12 mo</div>
-        </div>
-        <div id="waterChart" class="mini-chart-container"></div>
-      </div>
-      <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-          <div class="section-header" style="margin:0;">Species sighting index</div>
-        </div>
-        <div id="speciesChart" class="mini-chart-container"></div>
-      </div>
+    <div class="map-legend">
+      <span>🔴 Critical</span>
+      <span>🟠 High Risk</span>
+      <span>🔵 Moderate</span>
+      <span>🟢 Low Risk</span>
+      <span>🩵 Stable</span>
+      <span style="color:var(--text-muted);">📍 98 geolocated Ramsar sites · India-bound map · smooth hover</span>
     </div>
   </div>
 
-  <!-- ── TAB: ANOMALY ── -->
-  <div id="tab-anomaly" style="display:none;" class="fade-in">
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
-      <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
-          <div class="section-header" style="margin:0;">Detected anomalies — AI signal analysis</div>
-          <button class="action-btn" onclick="sendPrompt('Generate anomaly investigation report')"><i class="ti ti-file-report"></i> Export report</button>
-        </div>
-        <div id="anomalyList"></div>
+  <!-- ===== CATALOG PANEL ===== -->
+  <div class="panel" id="panel-catalog">
+    <div class="search-row">
+      <input type="text" id="searchInp" placeholder="🔍  Search wetland or state…" oninput="filterTable()" style="flex:2;">
+      <select id="filterRisk" onchange="filterTable()">
+        <option value="">All Risk Levels</option>
+        <option value="Critical">Critical</option>
+        <option value="High Risk">High Risk</option>
+        <option value="Moderate">Moderate</option>
+        <option value="Low Risk">Low Risk</option>
+        <option value="Stable">Stable</option>
+      </select>
+      <select id="filterState" onchange="filterTable()">
+        <option value="">All States</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table id="wetlandTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Wetland Name</th>
+            <th>State</th>
+            <th>Area (ha)</th>
+            <th>Health Score</th>
+            <th>Risk Level</th>
+            <th>Biodiversity</th>
+            <th>Trend</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="detail-modal" id="detailBox" style="display:none; margin-top:20px;"></div>
+  </div>
+
+  <!-- ===== ANALYTICS PANEL ===== -->
+  <div class="panel" id="panel-analytics">
+    <div class="card"><canvas id="bioChart" height="200"></canvas></div>
+    <div class="two-col" style="margin-top:1.25rem;">
+      <div class="card"><canvas id="waterChart"></canvas></div>
+      <div class="card"><canvas id="pollChart"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:1.25rem;"><canvas id="predChart" height="150"></canvas></div>
+  </div>
+
+  <!-- ===== AI PANEL ===== -->
+  <div class="panel" id="panel-ai">
+    <div class="ai-box">
+      <div class="chart-label">🤖 AI Wetland Analyst</div>
+      <p>Ask about India's Ramsar wetlands — degradation patterns, specific sites, or conservation strategies.</p>
+      <div class="ai-prompt">
+        <input type="text" id="aiInput" placeholder="e.g. Which wetlands in Rajasthan are most at risk?">
+        <button onclick="askAI()">Analyze ↗</button>
       </div>
-      <div class="panel">
-        <div class="section-header">System alerts</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="padding:14px;background:rgba(255,77,77,0.06);border:1px solid rgba(255,77,77,0.18);border-radius:var(--radius-md);">
-            <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--danger);letter-spacing:0.08em;margin-bottom:6px;">⬤ CRITICAL</div>
-            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">3 zones require intervention</div>
-            <div style="font-size:12px;color:var(--text-dim);">Multi-factor degradation cascade detected.</div>
-          </div>
-          <div style="padding:14px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.18);border-radius:var(--radius-md);">
-            <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--warning);letter-spacing:0.08em;margin-bottom:6px;">⚠ MODERATE</div>
-            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">3 zones under watch</div>
-            <div style="font-size:12px;color:var(--text-dim);">Seasonal deviation detected. Monitoring elevated.</div>
-          </div>
-          <div style="padding:14px;background:rgba(56,178,245,0.06);border:1px solid rgba(56,178,245,0.18);border-radius:var(--radius-md);">
-            <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--info);letter-spacing:0.08em;margin-bottom:6px;">ℹ INFO</div>
-            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">1 early-warning signal</div>
-            <div style="font-size:12px;color:var(--text-dim);">Species composition shift flagged for review.</div>
-          </div>
-        </div>
-        <div style="margin-top:20px;">
-          <div class="section-header">AI actions</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Root cause analysis for critical anomalies')"><i class="ti ti-search"></i> Root cause analysis</button>
-            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Alert all field teams')"><i class="ti ti-bell-ringing"></i> Alert field teams</button>
-            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Schedule emergency inspection')"><i class="ti ti-calendar-event"></i> Schedule inspection</button>
-          </div>
-        </div>
-      </div>
+      <div class="ai-response" id="aiResponse" style="display:none;"></div>
+    </div>
+    <div style="margin-top:1.25rem; display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn-sm" onclick="quickAsk('Which wetlands are critically endangered?')">Critical Sites</button>
+      <button class="btn-sm" onclick="quickAsk('Main causes of wetland degradation in India')">Degradation Causes</button>
     </div>
   </div>
 
-  <!-- ── TAB: PREDICT ── -->
-  <div id="tab-predict" style="display:none;" class="fade-in">
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
-      <div class="panel">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px;">
-          <div class="section-header" style="margin:0;">Ecological health projection — 2024–2028</div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <select id="scenarioSelect" onchange="updatePrediction()" style="width:auto;margin:0;">
-              <option value="baseline">Baseline — no intervention</option>
-              <option value="partial">Partial restoration</option>
-              <option value="full">Full restoration protocol</option>
-              <option value="worst">Worst-case scenario</option>
-            </select>
-            <span id="scenarioBadge"></span>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;" id="predictionBars"></div>
-      </div>
-      <div class="panel">
-        <div class="section-header">Long-term ecosystem services</div>
-        <div id="ltIndicators"></div>
-        <div style="margin-top:20px;">
-          <div class="section-header">Intervention priority matrix</div>
-          <div id="priorityMatrix"></div>
-        </div>
-      </div>
-    </div>
-  </div>
+</div><!-- /.dash -->
 
-  <!-- ── TAB: FACTORS ── -->
-  <div id="tab-factors" style="display:none;" class="fade-in">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-      <div class="panel">
-        <div class="section-header">Degradation driver ranking — AI-weighted</div>
-        <div id="factorBars"></div>
-        <div class="ai-assessment-box" style="margin-top:20px;">
-          <div class="ai-assessment-label"><i class="ti ti-robot"></i> Driver summary</div>
-          <div class="ai-assessment-text">Land-use change and water diversion are the dominant co-occurring stressors, with compounding effects detected in 5 of 7 degraded sites. Pollution and sediment accumulation amplify existing vulnerabilities.</div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="section-header">Co-occurrence dependency clusters</div>
-        <div id="dependencyList"></div>
-        <div style="margin-top:20px;">
-          <div class="section-header">Recommended focus areas</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Generate detailed factor intervention plan')"><i class="ti ti-checklist"></i> Generate intervention plan</button>
-            <button class="action-btn" style="width:100%;text-align:left;" onclick="sendPrompt('Export factor analysis report')"><i class="ti ti-file-analytics"></i> Export factor analysis</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /app-wrapper -->
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 
 <script>
-// ── Clock ──
-function updateClock() {
-  const now = new Date();
-  document.getElementById('clockDisplay').textContent =
-    now.toLocaleString('en-IN', {timeZone:'Asia/Kolkata', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false}) + ' IST';
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ── Data ──
-const statusColors  = { critical:'#ef4444', stressed:'#f59e0b', moderate:'#38b2f5', good:'#4ade80' };
-const statusBadge   = { critical:'badge-danger', stressed:'badge-warning', moderate:'badge-info', good:'badge-success' };
-
-const wetlands = [
-  {name:'Rampur Marsh',      region:'Northern', health:22, water:18, bio:14, habitat:20, pollution:88, hydro:24, trend:-4.2, status:'critical'},
-  {name:'Kaveri Delta Basin',region:'Southern', health:28, water:22, bio:30, habitat:26, pollution:82, hydro:31, trend:-3.8, status:'critical'},
-  {name:'Shola Wetland',     region:'Western',  health:31, water:35, bio:28, habitat:33, pollution:79, hydro:29, trend:-2.9, status:'critical'},
-  {name:'Tungabhadra Flats', region:'Deccan',   health:47, water:51, bio:42, habitat:48, pollution:55, hydro:44, trend:-1.4, status:'stressed'},
-  {name:'Nilgiri Bog',       region:'Southern', health:53, water:58, bio:49, habitat:55, pollution:48, hydro:52, trend:-0.9, status:'stressed'},
-  {name:'Godavari Marshland',region:'Eastern',  health:61, water:65, bio:58, habitat:63, pollution:41, hydro:60, trend:+0.3, status:'stressed'},
-  {name:'Cauvery Floodplain',region:'Southern', health:67, water:70, bio:65, habitat:68, pollution:35, hydro:66, trend:-0.4, status:'moderate'},
-  {name:'Periyar Reserve',   region:'Western',  health:75, water:79, bio:78, habitat:74, pollution:22, hydro:72, trend:+1.1, status:'good'},
-  {name:'Loktak Lake',       region:'Northeast',health:82, water:84, bio:85, habitat:80, pollution:18, hydro:81, trend:+0.8, status:'good'},
-  {name:'Wular Lake',        region:'Northern', health:88, water:90, bio:89, habitat:86, pollution:14, hydro:87, trend:+1.4, status:'good'},
+// ============================================================
+// COMPLETE RAMSAR DATA — 98 SITES (unchanged from original)
+// ============================================================
+const BASE_WETLANDS = [
+  {id:1,name:"Chilika Lake",state:"Odisha",area:1165000,type:"Lagoon",health:68,risk:"Moderate",bio:72,trend:"stable",lat:19.7,lon:85.3},
+  {id:2,name:"Keoladeo Ghana NP",state:"Rajasthan",area:2873,type:"Freshwater",health:74,risk:"Moderate",bio:81,trend:"improving",lat:27.1,lon:77.5},
+  {id:3,name:"Wular Lake",state:"J&K",area:18900,type:"Freshwater",health:41,risk:"High Risk",bio:55,trend:"declining",lat:34.4,lon:74.6},
+  {id:4,name:"Harike Lake",state:"Punjab",area:4100,type:"Freshwater",health:38,risk:"High Risk",bio:48,trend:"declining",lat:31.1,lon:74.9},
+  {id:5,name:"Sambhar Lake",state:"Rajasthan",area:24000,type:"Saline",health:52,risk:"Moderate",bio:44,trend:"stable",lat:26.9,lon:75.1},
+  {id:6,name:"Loktak Lake",state:"Manipur",area:26600,type:"Freshwater",health:44,risk:"High Risk",bio:67,trend:"declining",lat:24.5,lon:93.8},
+  {id:7,name:"Deepor Beel",state:"Assam",area:4000,type:"Freshwater",health:35,risk:"Critical",bio:58,trend:"declining",lat:26.1,lon:91.6},
+  {id:8,name:"Pong Dam Lake",state:"H.P.",area:15662,type:"Manmade",health:61,risk:"Moderate",bio:63,trend:"stable",lat:32.0,lon:76.2},
+  {id:9,name:"Ropar Wetland",state:"Punjab",area:1365,type:"Freshwater",health:42,risk:"High Risk",bio:51,trend:"declining",lat:30.9,lon:76.5},
+  {id:10,name:"Kanjli Wetland",state:"Punjab",area:183,type:"Freshwater",health:39,risk:"High Risk",bio:46,trend:"declining",lat:31.4,lon:75.2},
+  {id:11,name:"Kolleru Lake",state:"Andhra Pradesh",area:90100,type:"Freshwater",health:33,risk:"Critical",bio:49,trend:"declining",lat:16.6,lon:81.2},
+  {id:12,name:"Bhoj Wetland",state:"M.P.",area:3201,type:"Freshwater",health:55,risk:"Moderate",bio:61,trend:"stable",lat:23.2,lon:77.4},
+  {id:13,name:"Asan Barrage",state:"Uttarakhand",area:444,type:"Manmade",health:63,risk:"Moderate",bio:67,trend:"improving",lat:30.4,lon:77.7},
+  {id:14,name:"Nawabganj Bird Sanctuary",state:"U.P.",area:224,type:"Freshwater",health:58,risk:"Moderate",bio:72,trend:"stable",lat:26.9,lon:81.0},
+  {id:15,name:"Saman Bird Sanctuary",state:"U.P.",area:526,type:"Freshwater",health:54,risk:"Moderate",bio:69,trend:"stable",lat:26.5,lon:79.0},
+  {id:16,name:"Sandi Bird Sanctuary",state:"U.P.",area:308,type:"Freshwater",health:56,risk:"Moderate",bio:71,trend:"stable",lat:27.2,lon:80.1},
+  {id:17,name:"Samaspur Bird Sanctuary",state:"U.P.",area:800,type:"Freshwater",health:59,risk:"Moderate",bio:73,trend:"improving",lat:26.1,lon:81.2},
+  {id:18,name:"Surinsagar Wetland",state:"Gujarat",area:130,type:"Urban",health:31,risk:"Critical",bio:28,trend:"declining",lat:22.3,lon:73.2},
+  {id:19,name:"Thol Lake",state:"Gujarat",area:699,type:"Freshwater",health:62,risk:"Moderate",bio:71,trend:"stable",lat:23.2,lon:72.4},
+  {id:20,name:"Wadhwana Wetland",state:"Gujarat",area:1300,type:"Freshwater",health:58,risk:"Moderate",bio:64,trend:"stable",lat:22.8,lon:73.5},
+  {id:21,name:"Nalsarovar Bird Sanctuary",state:"Gujarat",area:12000,type:"Freshwater",health:54,risk:"Moderate",bio:68,trend:"stable",lat:22.9,lon:72.0},
+  {id:22,name:"Khijadiya Bird Sanctuary",state:"Gujarat",area:605,type:"Freshwater",health:67,risk:"Moderate",bio:75,trend:"improving",lat:22.5,lon:70.1},
+  {id:23,name:"Sultanpur NP",state:"Haryana",area:1425,type:"Freshwater",health:48,risk:"High Risk",bio:59,trend:"declining",lat:28.4,lon:76.9},
+  {id:24,name:"Bhindawas Wildlife Sanctuary",state:"Haryana",area:1074,type:"Freshwater",health:51,risk:"Moderate",bio:63,trend:"stable",lat:28.4,lon:76.7},
+  {id:25,name:"Khabartal",state:"Bihar",area:2620,type:"Freshwater",health:46,risk:"High Risk",bio:57,trend:"declining",lat:25.5,lon:86.5},
+  {id:26,name:"Kanwar Lake (Kabar Taal)",state:"Bihar",area:6786,type:"Freshwater",health:29,risk:"Critical",bio:41,trend:"declining",lat:25.6,lon:85.9},
+  {id:27,name:"Suchindram Theroor",state:"Tamil Nadu",area:94,type:"Freshwater",health:44,risk:"High Risk",bio:52,trend:"declining",lat:8.2,lon:77.5},
+  {id:28,name:"Vedanthangal Bird Sanctuary",state:"Tamil Nadu",area:74,type:"Freshwater",health:72,risk:"Low Risk",bio:82,trend:"stable",lat:12.5,lon:79.9},
+  {id:29,name:"Chitrangudi Bird Sanctuary",state:"Tamil Nadu",area:260,type:"Freshwater",health:61,risk:"Moderate",bio:74,trend:"stable",lat:9.5,lon:78.7},
+  {id:30,name:"Vembannur Wetland Complex",state:"Tamil Nadu",area:20,type:"Freshwater",health:38,risk:"High Risk",bio:44,trend:"declining",lat:9.4,lon:78.1},
+  {id:31,name:"Pallikaranai Marsh",state:"Tamil Nadu",area:80,type:"Freshwater",health:26,risk:"Critical",bio:33,trend:"declining",lat:12.9,lon:80.2},
+  {id:32,name:"Kanjirankulam Bird Sanctuary",state:"Tamil Nadu",area:96,type:"Freshwater",health:67,risk:"Moderate",bio:76,trend:"stable",lat:9.3,lon:77.7},
+  {id:33,name:"Koonthankulam Bird Sanctuary",state:"Tamil Nadu",area:72,type:"Freshwater",health:74,risk:"Low Risk",bio:83,trend:"improving",lat:8.8,lon:77.6},
+  {id:34,name:"Karikili Bird Sanctuary",state:"Tamil Nadu",area:61,type:"Freshwater",health:69,risk:"Moderate",bio:78,trend:"stable",lat:12.4,lon:79.9},
+  {id:35,name:"Udayamarthandapuram",state:"Tamil Nadu",area:44,type:"Freshwater",health:63,risk:"Moderate",bio:71,trend:"stable",lat:10.5,lon:79.7},
+  {id:36,name:"Sakkarakottai",state:"Tamil Nadu",area:53,type:"Freshwater",health:66,risk:"Moderate",bio:73,trend:"stable",lat:9.5,lon:78.9},
+  {id:37,name:"Vellode Bird Sanctuary",state:"Tamil Nadu",area:77,type:"Freshwater",health:71,risk:"Low Risk",bio:79,trend:"stable",lat:11.3,lon:77.8},
+  {id:38,name:"Udhayamarthandapuram Lake",state:"Tamil Nadu",area:44,type:"Freshwater",health:60,risk:"Moderate",bio:67,trend:"stable",lat:10.5,lon:79.7},
+  {id:39,name:"Point Calimere",state:"Tamil Nadu",area:38500,type:"Coastal",health:62,risk:"Moderate",bio:71,trend:"stable",lat:10.3,lon:79.9},
+  {id:40,name:"Hokera Wetland",state:"J&K",area:1375,type:"Freshwater",health:43,risk:"High Risk",bio:58,trend:"declining",lat:34.0,lon:74.7},
+  {id:41,name:"Surinsar-Mansar Lakes",state:"J&K",area:350,type:"Freshwater",health:55,risk:"Moderate",bio:62,trend:"stable",lat:32.7,lon:75.0},
+  {id:42,name:"Renuka Wetland",state:"H.P.",area:20,type:"Freshwater",health:64,risk:"Moderate",bio:69,trend:"stable",lat:30.6,lon:77.5},
+  {id:43,name:"Ashtamudi Lake",state:"Kerala",area:61400,type:"Estuarine",health:56,risk:"Moderate",bio:67,trend:"stable",lat:9.0,lon:76.6},
+  {id:44,name:"Sasthamkotta Lake",state:"Kerala",area:375,type:"Freshwater",health:61,risk:"Moderate",bio:65,trend:"stable",lat:9.1,lon:76.6},
+  {id:45,name:"Vembanad-Kol Wetland",state:"Kerala",area:1512500,type:"Estuarine",health:49,risk:"High Risk",bio:64,trend:"declining",lat:9.6,lon:76.4},
+  {id:46,name:"Tsomoriri Lake",state:"Ladakh",area:12000,type:"High altitude",health:82,risk:"Low Risk",bio:61,trend:"stable",lat:32.9,lon:78.3},
+  {id:47,name:"Chandertal Wetland",state:"H.P.",area:49,type:"High altitude",health:85,risk:"Low Risk",bio:58,trend:"stable",lat:32.5,lon:77.6},
+  {id:48,name:"Rupar Wetland",state:"Punjab",area:1365,type:"Freshwater",health:40,risk:"High Risk",bio:49,trend:"declining",lat:30.9,lon:76.5},
+  {id:49,name:"Nanda Lake",state:"Goa",area:42,type:"Freshwater",health:68,risk:"Moderate",bio:73,trend:"stable",lat:15.5,lon:73.9},
+  {id:50,name:"Karaivetti",state:"Tamil Nadu",area:453,type:"Freshwater",health:65,risk:"Moderate",bio:74,trend:"stable",lat:11.2,lon:79.3},
+  {id:51,name:"Longwood Shola",state:"Tamil Nadu",area:116,type:"Freshwater",health:77,risk:"Low Risk",bio:81,trend:"stable",lat:11.4,lon:76.7},
+  {id:52,name:"Sirpur Lake",state:"M.P.",area:161,type:"Freshwater",health:53,risk:"Moderate",bio:60,trend:"stable",lat:22.7,lon:75.9},
+  {id:53,name:"Yashwant Sagar",state:"M.P.",area:814,type:"Manmade",health:48,risk:"High Risk",bio:55,trend:"declining",lat:22.5,lon:75.6},
+  {id:54,name:"Ranganathittu",state:"Karnataka",area:517,type:"Riverine",health:72,risk:"Low Risk",bio:83,trend:"improving",lat:12.4,lon:76.6},
+  {id:55,name:"Magadi Kere",state:"Karnataka",area:50,type:"Freshwater",health:59,risk:"Moderate",bio:65,trend:"stable",lat:12.9,lon:77.2},
+  {id:56,name:"Aghanashini Estuary",state:"Karnataka",area:5757,type:"Estuarine",health:67,risk:"Moderate",bio:75,trend:"stable",lat:14.4,lon:74.5},
+  {id:57,name:"Ankasamudra",state:"Karnataka",area:39,type:"Freshwater",health:62,risk:"Moderate",bio:69,trend:"stable",lat:15.2,lon:75.6},
+  {id:58,name:"Gudavi Bird Sanctuary",state:"Karnataka",area:73,type:"Freshwater",health:71,risk:"Low Risk",bio:78,trend:"stable",lat:13.9,lon:75.3},
+  {id:59,name:"Daivadana Kere",state:"Karnataka",area:35,type:"Freshwater",health:60,risk:"Moderate",bio:66,trend:"stable",lat:12.7,lon:76.8},
+  {id:60,name:"Kali Bird Reserve",state:"Karnataka",area:1000,type:"Freshwater",health:73,risk:"Low Risk",bio:80,trend:"improving",lat:15.0,lon:74.5},
+  {id:61,name:"Shettihalli",state:"Karnataka",area:39520,type:"Freshwater",health:75,risk:"Low Risk",bio:82,trend:"stable",lat:13.5,lon:75.9},
+  {id:62,name:"Begur",state:"Karnataka",area:11407,type:"Freshwater",health:69,risk:"Moderate",bio:76,trend:"stable",lat:13.1,lon:75.7},
+  {id:63,name:"Ramnagar Pahelwan",state:"U.P.",area:1208,type:"Freshwater",health:44,risk:"High Risk",bio:52,trend:"declining",lat:25.2,lon:82.2},
+  {id:64,name:"Bakhira Sanctuary",state:"U.P.",area:2893,type:"Freshwater",health:50,risk:"Moderate",bio:61,trend:"stable",lat:26.8,lon:83.1},
+  {id:65,name:"Parvati Arga",state:"U.P.",area:723,type:"Freshwater",health:53,risk:"Moderate",bio:66,trend:"stable",lat:26.4,lon:82.7},
+  {id:66,name:"Turtle Wildlife",state:"U.P.",area:1267,type:"Riverine",health:46,risk:"High Risk",bio:55,trend:"declining",lat:25.3,lon:83.0},
+  {id:67,name:"Ohri Heen Lake",state:"Haryana",area:500,type:"Freshwater",health:37,risk:"High Risk",bio:43,trend:"declining",lat:29.1,lon:75.8},
+  {id:68,name:"Basai Wetland",state:"Haryana",area:143,type:"Freshwater",health:32,risk:"Critical",bio:37,trend:"declining",lat:28.5,lon:77.0},
+  {id:69,name:"Kalewadi Peacock",state:"Maharashtra",area:324,type:"Freshwater",health:58,risk:"Moderate",bio:63,trend:"stable",lat:19.8,lon:74.0},
+  {id:70,name:"Nandur Madhmeshwar",state:"Maharashtra",area:14000,type:"Freshwater",health:65,risk:"Moderate",bio:74,trend:"improving",lat:20.1,lon:74.4},
+  {id:71,name:"Lonar",state:"Maharashtra",area:3826,type:"Saline",health:69,risk:"Moderate",bio:61,trend:"stable",lat:19.9,lon:76.5},
+  {id:72,name:"Ujani Bird Sanctuary",state:"Maharashtra",area:10302,type:"Manmade",health:55,risk:"Moderate",bio:64,trend:"stable",lat:18.1,lon:74.6},
+  {id:73,name:"Mayani",state:"Maharashtra",area:28,type:"Freshwater",health:73,risk:"Low Risk",bio:80,trend:"improving",lat:17.9,lon:74.2},
+  {id:74,name:"Palghar",state:"Maharashtra",area:940,type:"Coastal",health:48,risk:"High Risk",bio:56,trend:"declining",lat:19.7,lon:72.8},
+  {id:75,name:"Thane Creek",state:"Maharashtra",area:16008,type:"Coastal",health:44,risk:"High Risk",bio:51,trend:"declining",lat:19.1,lon:73.0},
+  {id:76,name:"Nanjarayan Tank",state:"Tamil Nadu",area:132,type:"Freshwater",health:52,risk:"Moderate",bio:61,trend:"stable",lat:11.0,lon:77.0},
+  {id:77,name:"Vedantangal Tank",state:"Tamil Nadu",area:74,type:"Freshwater",health:70,risk:"Low Risk",bio:80,trend:"stable",lat:12.5,lon:79.9},
+  {id:78,name:"Uppalapadu",state:"Andhra Pradesh",area:202,type:"Freshwater",health:66,risk:"Moderate",bio:77,trend:"stable",lat:16.5,lon:80.6},
+  {id:79,name:"Gosthani Estuary",state:"Andhra Pradesh",area:4726,type:"Estuarine",health:59,risk:"Moderate",bio:66,trend:"stable",lat:18.0,lon:83.5},
+  {id:80,name:"Tamara Lagoon",state:"Andhra Pradesh",area:50,type:"Lagoon",health:43,risk:"High Risk",bio:50,trend:"declining",lat:16.9,lon:82.0},
+  {id:81,name:"Pulicat Lake",state:"Andhra Pradesh",area:72400,type:"Lagoon",health:56,risk:"Moderate",bio:67,trend:"stable",lat:13.7,lon:80.3},
+  {id:82,name:"Yeleru Res.",state:"Andhra Pradesh",area:18099,type:"Manmade",health:61,risk:"Moderate",bio:65,trend:"stable",lat:17.0,lon:81.9},
+  {id:83,name:"Telineelapuram",state:"Andhra Pradesh",area:38,type:"Freshwater",health:64,risk:"Moderate",bio:73,trend:"stable",lat:18.7,lon:83.9},
+  {id:84,name:"Coringa",state:"Andhra Pradesh",area:23500,type:"Mangrove",health:67,risk:"Moderate",bio:76,trend:"stable",lat:16.9,lon:82.3},
+  {id:85,name:"Kakinada Bay",state:"Andhra Pradesh",area:14400,type:"Estuarine",health:55,risk:"Moderate",bio:64,trend:"stable",lat:16.9,lon:82.3},
+  {id:86,name:"Krishna Estuary",state:"Andhra Pradesh",area:14100,type:"Estuarine",health:53,risk:"Moderate",bio:62,trend:"stable",lat:15.8,lon:80.8},
+  {id:87,name:"Srikakulam Coringa",state:"Andhra Pradesh",area:19120,type:"Mangrove",health:60,risk:"Moderate",bio:69,trend:"stable",lat:18.8,lon:84.5},
+  {id:88,name:"Nelapattu",state:"Andhra Pradesh",area:459,type:"Freshwater",health:70,risk:"Low Risk",bio:81,trend:"improving",lat:14.1,lon:79.9},
+  {id:89,name:"Koonthankulum",state:"Tamil Nadu",area:72,type:"Freshwater",health:74,risk:"Low Risk",bio:83,trend:"improving",lat:8.8,lon:77.6},
+  {id:90,name:"Sirohi Wetland",state:"Rajasthan",area:148,type:"Freshwater",health:41,risk:"High Risk",bio:47,trend:"declining",lat:24.9,lon:72.9},
+  {id:91,name:"Mahi River Wetland",state:"Rajasthan",area:4200,type:"Riverine",health:36,risk:"High Risk",bio:44,trend:"declining",lat:23.3,lon:74.0},
+  {id:92,name:"Jakham Reservoir",state:"Rajasthan",area:422,type:"Manmade",health:53,risk:"Moderate",bio:58,trend:"stable",lat:24.1,lon:74.8},
+  {id:93,name:"Menar Wetland",state:"Rajasthan",area:420,type:"Freshwater",health:47,risk:"High Risk",bio:53,trend:"declining",lat:24.7,lon:74.1},
+  {id:94,name:"Bap Moti Bavdi",state:"Rajasthan",area:24,type:"Freshwater",health:39,risk:"High Risk",bio:41,trend:"declining",lat:27.5,lon:72.4},
+  {id:95,name:"Keoladeo NP",state:"Rajasthan",area:2873,type:"Freshwater",health:74,risk:"Moderate",bio:87,trend:"improving",lat:27.1,lon:77.5},
+  {id:96,name:"Karera",state:"M.P.",area:2020,type:"Freshwater",health:49,risk:"High Risk",bio:55,trend:"declining",lat:25.5,lon:78.2},
+  {id:97,name:"Son Gharial",state:"M.P.",area:12800,type:"Riverine",health:52,risk:"Moderate",bio:60,trend:"stable",lat:24.6,lon:81.7},
+  {id:98,name:"Nalsarovar",state:"Gujarat",area:12000,type:"Freshwater",health:57,risk:"Moderate",bio:69,trend:"stable",lat:22.9,lon:72.0}
 ];
+const WETLANDS = BASE_WETLANDS;
 
-// ── MAP ──
-const mapData = [
-  ['good','stressed','critical','good','stressed','water'],
-  ['water','good','stressed','critical','good','water'],
-  ['stressed','critical','good','good','stressed','good'],
-  ['good','good','stressed','water','good','stressed'],
-  ['critical','good','stressed','good','stressed','good'],
-  ['good','good','good','stressed','good','good'],
-  ['stressed','good','water','good','critical','stressed'],
-];
+// ============================================================
+// CHART.JS GLOBAL DARK THEME DEFAULTS
+// Applied before any chart is instantiated
+// ============================================================
+Chart.defaults.color = '#8b949e';          // axis labels → secondary text
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';  // grid lines
+Chart.defaults.backgroundColor = 'rgba(45,212,191,0.7)';
+Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+Chart.defaults.font.size = 12;
+// Plugin defaults
+Chart.defaults.plugins.legend.labels.color = '#8b949e';
+Chart.defaults.plugins.legend.labels.padding = 16;
+Chart.defaults.plugins.tooltip.backgroundColor = '#1c2333';
+Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.08)';
+Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.tooltip.titleColor = '#e6edf3';
+Chart.defaults.plugins.tooltip.bodyColor = '#8b949e';
+Chart.defaults.plugins.tooltip.padding = 10;
 
-const mapCellInfo = {
-  critical: ['Rampur Marsh — score 22','Shola Wetland — score 31','Kaveri Delta — score 28','North sector — score 25'],
-  stressed: ['Tungabhadra — score 47','Nilgiri Bog — score 53','Godavari — score 61'],
-  good:     ['Periyar — score 75','Wular — score 88','Loktak — score 82'],
-  water:    ['Open water body'],
-};
-
-function buildMap() {
-  const grid = document.getElementById('mapGrid');
-  const colors = { critical:'#ef4444', stressed:'#f59e0b', good:'#22c55e', water:'#38b2f5' };
-  const opacity = { critical:'0.85', stressed:'0.75', good:'0.6', water:'0.3' };
-  const label   = { critical:'!', stressed:'△', good:'●', water:'~' };
-  mapData.forEach(row => row.forEach(type => {
-    const cell = document.createElement('div');
-    cell.className = 'map-cell';
-    cell.style.background = colors[type];
-    cell.style.opacity = opacity[type];
-    if (type === 'critical') cell.style.animation = 'pulse-critical 2s infinite';
-    cell.innerHTML = `<span>${label[type]}</span>`;
-    cell.onclick = () => {
-      const infos = mapCellInfo[type];
-      const idx = Math.floor(Math.random() * infos.length);
-      const tt = document.getElementById('mapTooltip');
-      tt.style.display = 'block';
-      tt.innerHTML = `<i class="ti ti-info-circle"></i> <strong>${type.toUpperCase()}</strong> &nbsp;·&nbsp; ${infos[idx]}`;
-    };
-    grid.appendChild(cell);
-  }));
-}
-
-function buildAtRisk() {
-  const sorted = [...wetlands].sort((a, b) => a.health - b.health).slice(0, 6);
-  document.getElementById('atRiskList').innerHTML = sorted.map(w => `
-    <div class="wetland-row">
-      <span style="flex-shrink:0;width:8px;height:8px;border-radius:50%;background:${statusColors[w.status]};${w.status==='critical'?'animation:pulse-critical 1.5s infinite;':''}display:inline-block;"></span>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${w.name}</div>
-        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">${w.region} Cluster</div>
-      </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <div style="font-family:var(--font-mono);font-size:15px;font-weight:700;color:${w.health<40?'var(--danger)':w.health<65?'var(--warning)':'var(--success)'};">${w.health}</div>
-        <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:${w.trend<0?'var(--danger)':'var(--success)'};">${w.trend>0?'+':''}${w.trend.toFixed(1)}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function buildDataSources() {
-  const sources = [
-    { icon:'ti-droplet', name:'Hydrological records', records:'18,240', status:'live', last:'2 min ago' },
-    { icon:'ti-cloud-rain', name:'Rainfall telemetry', records:'9,102', status:'live', last:'5 min ago' },
-    { icon:'ti-flask', name:'Pollution indicators', records:'4,780', status:'live', last:'1 hr ago' },
-    { icon:'ti-bug', name:'Biodiversity surveys', records:'6,340', status:'synced', last:'6 hr ago' },
-    { icon:'ti-map', name:'Land-use maps', records:'2,108', status:'synced', last:'1 day ago' },
-    { icon:'ti-ruler-measure', name:'Sediment measurements', records:'3,221', status:'synced', last:'3 hr ago' },
-  ];
-  document.getElementById('dataSources').innerHTML =
-    `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-      ${sources.map(s => `
-        <div class="datasource-card">
-          <i class="ti ${s.icon}" style="font-size:20px;color:var(--accent-teal);flex-shrink:0;"></i>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;color:var(--text-primary);">${s.name}</div>
-            <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">${s.records} entries · ${s.last}</div>
-          </div>
-          <span class="badge ${s.status==='live'?'badge-success':'badge-info'}" style="flex-shrink:0;">${s.status}</span>
-        </div>
-      `).join('')}
-    </div>`;
-}
-
-function buildHealthList() {
-  const el = document.getElementById('healthList');
-  const sel = document.getElementById('wetlandSelect');
-  el.innerHTML = wetlands.map((w, i) => `
-    <div class="wetland-row" style="cursor:pointer;" onclick="document.getElementById('wetlandSelect').value='${i}';updateComposition()">
-      <div class="status-ring" style="background:${w.health<40?'rgba(239,68,68,0.12)':w.health<65?'rgba(245,158,11,0.12)':'rgba(74,222,128,0.1)'};color:${w.health<40?'var(--danger)':w.health<65?'var(--warning)':'var(--success)'};">
-        ${w.health}
-      </div>
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${w.name}</div>
-        <div style="height:3px;background:var(--border-subtle);border-radius:3px;margin-top:6px;overflow:hidden;">
-          <div style="height:100%;width:${w.health}%;background:${w.health<40?'var(--danger)':w.health<65?'var(--warning)':'var(--success)'};border-radius:3px;transition:width 1s ease;"></div>
-        </div>
-      </div>
-      <span class="badge ${statusBadge[w.status]}">${w.status}</span>
-    </div>
-  `).join('');
-  sel.innerHTML = wetlands.map((w, i) => `<option value="${i}">${w.name}</option>`).join('');
-  updateComposition();
-}
-
-function updateComposition() {
-  const w = wetlands[document.getElementById('wetlandSelect').value];
-  const dims = [
-    {label:'Water retention',    value:w.water,         color:'var(--accent-blue)'},
-    {label:'Biodiversity index', value:w.bio,           color:'var(--accent-teal)'},
-    {label:'Habitat integrity',  value:w.habitat,       color:'var(--accent-green)'},
-    {label:'Pollution (inv.)',   value:100-w.pollution, color:'#f97316'},
-    {label:'Hydrological flow',  value:w.hydro,         color:'#a78bfa'},
-  ];
-  document.getElementById('compositionBars').innerHTML = dims.map(d => `
-    <div class="factor-bar">
-      <span class="factor-label">${d.label}</span>
-      <div class="factor-track"><div class="factor-fill" style="width:${d.value}%;background:${d.color};"></div></div>
-      <span class="factor-pct">${d.value}</span>
-    </div>
-  `).join('');
-  const msgs = {
-    critical: `Severe ecological stress detected. Multi-factor degradation is accelerating. Immediate hydrological intervention and pollution mitigation are strongly recommended. Biodiversity at high collapse risk.`,
-    stressed:  `Moderate degradation signals present. Water retention and habitat fragmentation are the primary stressors. Monitor seasonal transitions for further decline.`,
-    moderate:  `Ecosystem shows signs of instability but maintains core functions. Preventive conservation measures advised to halt downward trajectory.`,
-    good:      `Wetland is ecologically active and resilient. Maintain current conservation protocols and monitor for encroachment or land-use change in surrounding buffer zones.`
+// ============================================================
+// HELPER UTILITIES (unchanged logic, updated color tokens)
+// ============================================================
+function getRiskBadge(r) {
+  const m = {
+    Critical:   "badge-critical",
+    "High Risk":"badge-high",
+    Moderate:   "badge-moderate",
+    "Low Risk": "badge-low",
+    Stable:     "badge-stable"
   };
-  document.getElementById('aiAssessment').textContent = msgs[w.status];
+  return `<span class="badge ${m[r]}">${r}</span>`;
+}
+function getHealthColor(h) {
+  // Dark-optimized palette — same semantic meaning, better contrast
+  if (h < 35) return "#f87171";  // red-400
+  if (h < 50) return "#fb923c";  // orange-400
+  if (h < 65) return "#60a5fa";  // blue-400
+  if (h < 78) return "#4ade80";  // green-400
+  return "#34d399";              // emerald-400
+}
+function getTrendIcon(t) {
+  if (t === "declining")  return "↓";
+  if (t === "improving")  return "↑";
+  return "→";
+}
+function getRiskColorForSquare(r) {
+  switch(r) {
+    case "Critical":  return "#f87171";
+    case "High Risk": return "#fb923c";
+    case "Moderate":  return "#60a5fa";
+    case "Low Risk":  return "#4ade80";
+    case "Stable":    return "#34d399";
+    default:          return "#484f58";
+  }
 }
 
-function buildBiodiversity() {
-  const items = [
-    {name:'Avian species count',   value:'14 spp',    risk:'high',   detail:'↓ 38% in 2 yrs'},
-    {name:'Aquatic macrophytes',   value:'Low density',risk:'high',  detail:'Cover < 20%'},
-    {name:'Macroinvertebrates',    value:'Moderate',  risk:'medium', detail:'IBI score 42'},
-    {name:'Fish assemblage',       value:'Declining', risk:'high',   detail:'3 spp extirpated'},
-    {name:'Amphibian breeding',    value:'Irregular', risk:'medium', detail:'Delayed by 3 wks'},
-    {name:'Soil microbiome',       value:'Impaired',  risk:'medium', detail:'Low activity index'},
-    {name:'Migratory use',         value:'Reduced',   risk:'low',    detail:'↓ 15% stopovers'},
-    {name:'Invasive species',      value:'3 detected',risk:'high',   detail:'Water hyacinth +'},
-  ];
-  document.getElementById('bioDivGrid').innerHTML = items.map(i => `
-    <div class="metric-card" style="padding:14px;">
-      <div class="metric-label" style="font-size:10px;">${i.name}</div>
-      <div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">${i.value}</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <span class="badge ${i.risk==='high'?'badge-danger':i.risk==='medium'?'badge-warning':'badge-info'}">${i.risk} risk</span>
-        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">${i.detail}</span>
-      </div>
-    </div>
+// ============================================================
+// MAP STATE
+// ============================================================
+let mapInstance = null;
+
+// ============================================================
+// METRICS RENDER
+// ============================================================
+function renderMetrics() {
+  const total       = WETLANDS.length;
+  const crit        = WETLANDS.filter(w => w.risk === "Critical").length;
+  const high        = WETLANDS.filter(w => w.risk === "High Risk").length;
+  const avgHealth   = Math.round(WETLANDS.reduce((s, w) => s + w.health, 0) / total);
+  const decl        = WETLANDS.filter(w => w.trend === "declining").length;
+  document.getElementById("metrics").innerHTML = `
+    <div class="metric"><div class="metric-label">Total Ramsar Sites</div><div class="metric-val">${total}</div></div>
+    <div class="metric"><div class="metric-label">Avg Health Score</div><div class="metric-val" style="color:${getHealthColor(avgHealth)}">${avgHealth}<span style="font-size:14px;color:var(--text-muted)">/100</span></div></div>
+    <div class="metric"><div class="metric-label">Critical Sites</div><div class="metric-val" style="color:#f87171">${crit}</div></div>
+    <div class="metric"><div class="metric-label">High Risk Sites</div><div class="metric-val" style="color:#fb923c">${high}</div></div>
+    <div class="metric"><div class="metric-label">Declining Trend</div><div class="metric-val" style="color:#f87171">${decl}</div></div>
+  `;
+}
+
+// ============================================================
+// TABLE RENDER
+// ============================================================
+function renderTable(data) {
+  document.getElementById("tableBody").innerHTML = data.map(w => `
+    <tr>
+      <td>${w.id}</td>
+      <td style="font-weight:600;">${w.name}</td>
+      <td>${w.state}</td>
+      <td>${w.area.toLocaleString()}</td>
+      <td>
+        <div class="health-bar" style="border-radius:4px;">
+          <div style="width:${w.health}%; height:5px; background:${getHealthColor(w.health)}; border-radius:4px;"></div>
+        </div>
+        <span style="font-size:11px;color:${getHealthColor(w.health)}">${w.health}/100</span>
+      </td>
+      <td>${getRiskBadge(w.risk)}</td>
+      <td style="color:var(--text-secondary)">${w.bio}/100</td>
+      <td style="color:${getHealthColor(w.health)};font-weight:700;">${getTrendIcon(w.trend)}</td>
+      <td><button class="btn-sm" onclick="showDetail(${w.id})">Details</button></td>
+    </tr>
   `).join('');
 }
 
-function buildAnomalies() {
-  const anomalies = [
-    { severity:'critical', site:'Kaveri Delta Basin', type:'Water retention collapse',        signal:'Retention dropped 61% in 18 days despite normal rainfall. Subsurface drainage anomaly suspected.', tags:['hydrological','rapid-onset','soil-sealing'] },
-    { severity:'critical', site:'Rampur Marsh',       type:'Biodiversity crash event',        signal:'Avian and amphibian activity fell to near zero. No correlated temperature or rainfall cause identified.', tags:['biodiversity','unexplained','multi-species'] },
-    { severity:'critical', site:'Shola Wetland',      type:'Sediment pulse — upstream source',signal:'Turbidity spiked 8× baseline. Sediment load consistent with upstream agricultural runoff or construction.', tags:['pollution','sediment','land-use'] },
-    { severity:'moderate', site:'Tungabhadra Flats',  type:'Irregular seasonal lag',          signal:'Ecological activity delayed by 4 weeks vs historical phenological baseline. Possible thermal or hydrological disruption.', tags:['phenology','climate','seasonal'] },
-    { severity:'moderate', site:'Nilgiri Bog',        type:'Vegetation dieback pattern',      signal:'Patchy dieback in 3 quadrants. Spatial distribution inconsistent with drought; chemical stress suspected.', tags:['vegetation','spatial','chemical'] },
-    { severity:'moderate', site:'Godavari Marshland', type:'Groundwater decoupling',          signal:'Surface water stable; groundwater table dropped 2.1m. Loss of hydrological connectivity detected.', tags:['groundwater','hydro','connectivity'] },
-    { severity:'mild',     site:'Cauvery Floodplain', type:'Species composition shift',       signal:'Generalist species replacing specialists. Early indicator of ecosystem simplification.', tags:['biodiversity','compositional','early-warning'] },
+function filterTable() {
+  const q     = document.getElementById("searchInp").value.toLowerCase();
+  const risk  = document.getElementById("filterRisk").value;
+  const state = document.getElementById("filterState").value;
+  renderTable(WETLANDS.filter(w =>
+    (w.name.toLowerCase().includes(q) || w.state.toLowerCase().includes(q)) &&
+    (!risk  || w.risk  === risk) &&
+    (!state || w.state === state)
+  ));
+}
+
+function populateStateFilter() {
+  const states = [...new Set(WETLANDS.map(w => w.state))].sort();
+  const sel = document.getElementById("filterState");
+  sel.innerHTML = '<option value="">All States</option>';
+  states.forEach(s => {
+    const o = document.createElement("option");
+    o.value = s; o.textContent = s;
+    sel.appendChild(o);
+  });
+}
+
+function showDetail(id) {
+  const w = WETLANDS.find(x => x.id === id);
+  if (!w) return;
+  const box = document.getElementById("detailBox");
+  box.style.display = "block";
+  box.innerHTML = `
+    <h3>${w.name}</h3>
+    <p>${w.state} &nbsp;·&nbsp; ${w.type} &nbsp;·&nbsp; Health ${w.health}/100 &nbsp;·&nbsp; ${getRiskBadge(w.risk)}</p>
+    <button class="btn-sm" style="background:var(--accent-primary); color:#0d1117; border:none;" onclick="setTab('ai');document.getElementById('aiInput').value='Analyze ${w.name} conservation';askAI();">AI Analysis ↗</button>
+  `;
+}
+
+// ============================================================
+// RAMSAR GRID
+// ============================================================
+function buildRamsarGrid() {
+  const container = document.getElementById("ramsarGrid");
+  if (!container) return;
+  container.innerHTML = "";
+  WETLANDS.forEach(site => {
+    const sq = document.createElement("div");
+    sq.className = "grid-square";
+    sq.style.backgroundColor = getRiskColorForSquare(site.risk);
+    sq.title = `${site.name} (${site.state})`;
+    container.appendChild(sq);
+  });
+}
+
+// ============================================================
+// MAP INITIALIZATION
+// Using dark tile layer (CartoDB Dark Matter) to match theme
+// All marker and hover logic is UNCHANGED from the original
+// ============================================================
+function initMap() {
+  if (mapInstance) return;
+  const mapContainer = document.getElementById('indiaMap');
+  if (!mapContainer) return;
+
+  mapInstance = L.map('indiaMap').setView([23.5, 79.5], 5);
+
+  // Dark map tile — matches the dark theme
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &amp; CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 9
+  }).addTo(mapInstance);
+
+  // Strict India bounds — unchanged from original
+  const indiaBounds = L.latLngBounds(L.latLng(5.5, 67.0), L.latLng(37.2, 98.5));
+  mapInstance.setMaxBounds(indiaBounds);
+  mapInstance.on('drag', function() {
+    mapInstance.panInsideBounds(indiaBounds, { animate: false });
+  });
+
+  const hoverPanel = document.getElementById("hoverDetails");
+
+  WETLANDS.forEach(site => {
+    if (!site.lat || !site.lon) return;
+    const markerColor = getRiskColorForSquare(site.risk);
+    const customIcon = L.divIcon({
+      className: 'custom-marker',
+      html: `<div style="background-color:${markerColor}; width:13px; height:13px; border-radius:50%; border:2px solid rgba(255,255,255,0.7); box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`,
+      iconSize: [13, 13],
+      popupAnchor: [0, -8]
+    });
+
+    const marker = L.marker([site.lat, site.lon], { icon: customIcon }).addTo(mapInstance);
+    marker.bindTooltip(`${site.name}`, { sticky: true, direction: 'top' });
+
+    marker.on('mouseover', function() {
+      const riskColorMap = {
+        "Critical": "#f87171",
+        "High Risk":"#fb923c",
+        "Moderate": "#60a5fa",
+        "Low Risk": "#4ade80",
+        "Stable":   "#34d399"
+      };
+      hoverPanel.innerHTML = `
+        <div><span class="info-label">Wetland</span><div class="info-value">${site.name}</div></div>
+        <div><span class="info-label">State</span><div class="info-value">${site.state}</div></div>
+        <div><span class="info-label">Health Score</span><div class="info-value" style="color:${getHealthColor(site.health)}">${site.health}/100</div></div>
+        <div><span class="info-label">Risk Level</span><div class="info-value"><span class="risk-badge-map" style="background:${riskColorMap[site.risk]}20; color:${riskColorMap[site.risk]}; border:1px solid ${riskColorMap[site.risk]}40">${site.risk}</span></div></div>
+        <div><span class="info-label">Biodiversity</span><div class="info-value">${site.bio}/100</div></div>
+        <div><span class="info-label">Area (ha)</span><div class="info-value">${site.area.toLocaleString()}</div></div>
+        <div><span class="info-label">Trend</span><div class="info-value">${site.trend.toUpperCase()} ${getTrendIcon(site.trend)}</div></div>
+      `;
+    });
+
+    marker.on('mouseout', function() {
+      hoverPanel.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-secondary);">👆 Hover over any marker → detailed insights appear here</div>`;
+    });
+  });
+
+  mapInstance.invalidateSize();
+}
+
+window.addEventListener('resize', () => {
+  if (mapInstance && document.getElementById('panel-map').classList.contains('active')) {
+    mapInstance.invalidateSize();
+  }
+});
+
+// ============================================================
+// CHARTS — dark-themed versions
+// ============================================================
+function renderCharts() {
+  // Shared dark scales config
+  const darkScales = {
+    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
+    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } }
+  };
+
+  // Risk Distribution Doughnut
+  new Chart(document.getElementById("distChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Critical","High Risk","Moderate","Low Risk","Stable"],
+      datasets: [{
+        data: [
+          WETLANDS.filter(w=>w.risk==="Critical").length,
+          WETLANDS.filter(w=>w.risk==="High Risk").length,
+          WETLANDS.filter(w=>w.risk==="Moderate").length,
+          WETLANDS.filter(w=>w.risk==="Low Risk").length,
+          WETLANDS.filter(w=>w.risk==="Stable").length
+        ],
+        backgroundColor: ["#f87171","#fb923c","#60a5fa","#4ade80","#34d399"],
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      cutout: '65%',
+      plugins: { legend: { position: "bottom" } }
+    }
+  });
+
+  // State Degradation Bar
+  new Chart(document.getElementById("stateChart"), {
+    type: "bar",
+    data: {
+      labels: ["Rajasthan","Punjab","U.P.","Haryana","Bihar"],
+      datasets: [{
+        label: "Vulnerability Index",
+        data: [67,61,58,53,51],
+        backgroundColor: "rgba(96,165,250,0.7)",
+        borderRadius: 4,
+        borderWidth: 0
+      }]
+    },
+    options: { responsive: true, scales: darkScales }
+  });
+
+  // Ecological Stress Trend
+  new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: {
+      labels: ["2019","2020","2021","2022","2023","2024"],
+      datasets: [{
+        label: "Ecological Stress",
+        data: [38,41,44,46,51,55],
+        borderColor: "#f87171",
+        backgroundColor: "rgba(248,113,113,0.08)",
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: "#f87171",
+        pointRadius: 4
+      }]
+    },
+    options: { responsive: true, scales: darkScales }
+  });
+
+  // Biodiversity by Wetland Type
+  new Chart(document.getElementById("bioChart"), {
+    type: "bar",
+    data: {
+      labels: ["Lakes","Floodplains","Coastal"],
+      datasets: [{
+        label: "Biodiversity Index",
+        data: [62,71,58],
+        backgroundColor: ["rgba(45,212,191,0.7)","rgba(56,189,248,0.7)","rgba(129,140,248,0.7)"],
+        borderRadius: 4, borderWidth: 0
+      }]
+    },
+    options: { responsive: true, scales: darkScales }
+  });
+
+  // Water Spread Loss
+  new Chart(document.getElementById("waterChart"), {
+    type: "bar",
+    data: {
+      labels: ["1990s","2000s","2010s","2020s"],
+      datasets: [{
+        label: "Water Spread Loss (%)",
+        data: [18,29,41,55],
+        backgroundColor: "rgba(251,146,60,0.7)",
+        borderRadius: 4, borderWidth: 0
+      }]
+    },
+    options: { responsive: true, scales: darkScales }
+  });
+
+  // Pollution Sources Doughnut
+  new Chart(document.getElementById("pollChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Agricultural","Industrial","Sewage"],
+      datasets: [{
+        data: [38,27,22],
+        backgroundColor: ["rgba(251,146,60,0.8)","rgba(248,113,113,0.8)","rgba(96,165,250,0.8)"],
+        borderWidth: 0, hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, cutout: '60%',
+      plugins: { legend: { position: "bottom" } }
+    }
+  });
+
+  // Predictive Health Trend
+  new Chart(document.getElementById("predChart"), {
+    type: "line",
+    data: {
+      labels: ["2024","2026","2028","2030"],
+      datasets: [{
+        label: "Predicted Health Trend",
+        data: [57,53,48,42],
+        borderColor: "#fb923c",
+        backgroundColor: "rgba(251,146,60,0.08)",
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: "#fb923c",
+        pointRadius: 4,
+        borderDash: [6,3]
+      }]
+    },
+    options: { responsive: true, scales: darkScales }
+  });
+}
+
+// ============================================================
+// STRESSORS & CRITICAL LISTS
+// ============================================================
+function renderStressors() {
+  const factors = [
+    { name: "Water diversion",  val: 82 },
+    { name: "Agri runoff",      val: 75 },
+    { name: "Urban encroach",   val: 68 }
   ];
-  document.getElementById('anomalyList').innerHTML = anomalies.map(a => `
-    <div class="anomaly-item anomaly-${a.severity}">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
-        <span class="badge ${a.severity==='critical'?'badge-danger':a.severity==='moderate'?'badge-warning':'badge-info'}">${a.severity}</span>
-        <span style="font-size:14px;font-weight:700;color:var(--text-primary);">${a.type}</span>
-        <span style="margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);">${a.site}</span>
-      </div>
-      <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:10px;">${a.signal}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">${a.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
-    </div>
-  `).join('');
+  document.getElementById("stressors").innerHTML = factors.map(f =>
+    `<div><strong>${f.name}</strong> <span style="color:#fb923c;font-weight:600;">${f.val}%</span> <span style="color:var(--text-muted)">impact</span></div>`
+  ).join('');
 }
 
-function buildMiniCharts() {
-  const wc = document.getElementById('waterChart');
-  const vals = [88,84,79,75,71,68,62,55,48,38,32,25];
-  const months = ['J','F','M','A','M','J','J','A','S','O','N','D'];
-  wc.style.height = '100px';
-  wc.innerHTML = `<div style="display:flex;height:100%;align-items:flex-end;gap:3px;">
-    ${vals.map((v,i)=>`
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
-        <div style="flex:1;width:100%;background:${v<40?'var(--danger)':v<65?'var(--warning)':'var(--accent-blue)'};border-radius:3px 3px 0 0;height:${v}%;opacity:0.8;min-width:1px;"></div>
-        <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">${months[i]}</span>
-      </div>
-    `).join('')}
-  </div>`;
-
-  const sc = document.getElementById('speciesChart');
-  const sv = [65,70,58,72,45,30,68,42,20,55,38,48];
-  sc.style.height = '100px';
-  sc.innerHTML = `<div style="display:flex;height:100%;align-items:flex-end;gap:3px;">
-    ${sv.map((v,i)=>`
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
-        <div style="flex:1;width:100%;background:#a78bfa;border-radius:3px 3px 0 0;height:${v}%;opacity:0.75;min-width:1px;"></div>
-        <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">${months[i]}</span>
-      </div>
-    `).join('')}
-  </div>`;
+function renderCritical() {
+  const crit = WETLANDS.filter(w => w.risk === "Critical" || w.risk === "High Risk").slice(0, 6);
+  document.getElementById("critical-list").innerHTML = crit.map(w =>
+    `<div>⚠️ <strong>${w.name}</strong> <span style="color:var(--text-muted)">(${w.state})</span> <span style="color:${getHealthColor(w.health)}">H:${w.health}</span></div>`
+  ).join('');
 }
 
-const scenarios = {
-  baseline: { label:'Projected: −32% by 2029', years:[100,91,82,74,68], color:'var(--danger)' },
-  partial:  { label:'Projected: −12% by 2029', years:[100,97,94,92,88], color:'var(--warning)' },
-  full:     { label:'Projected: +8% by 2029',  years:[100,102,104,106,108], color:'var(--success)' },
-  worst:    { label:'Projected: −58% by 2029', years:[100,84,70,57,42], color:'#ff2222' },
+// ============================================================
+// TAB SWITCHER
+// ============================================================
+window.setTab = function(tabId) {
+  document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(el => el.classList.remove("active"));
+  document.querySelector(`[onclick="setTab('${tabId}')"]`).classList.add("active");
+  document.getElementById(`panel-${tabId}`).classList.add("active");
+
+  if (tabId === "map") {
+    if (!mapInstance) initMap();
+    else setTimeout(() => mapInstance.invalidateSize(), 80);
+  }
+  if (tabId === "catalog" && document.getElementById("tableBody").innerHTML === "") {
+    renderTable(WETLANDS);
+    populateStateFilter();
+  }
 };
 
-function updatePrediction() {
-  const s = document.getElementById('scenarioSelect').value;
-  const sc = scenarios[s];
-  document.getElementById('scenarioBadge').textContent = sc.label;
-  document.getElementById('predictionBars').innerHTML = sc.years.map((v, i) => `
-    <div class="pred-bar-wrap">
-      <div class="pred-bar-track">
-        <div style="width:100%;background:${sc.color};border-radius:4px 4px 0 0;height:${v}%;opacity:${0.4+i*0.14};transition:height 0.8s ease;"></div>
-      </div>
-      <div style="font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:4px;">202${4+i}</div>
-      <div style="font-family:var(--font-mono);font-size:15px;font-weight:800;color:${v<80?'var(--danger)':v>100?'var(--success)':'var(--warning)'};">${v}%</div>
-    </div>
-  `).join('');
+// ============================================================
+// AI FUNCTIONS
+// ============================================================
+window.askAI = function() {
+  const q = document.getElementById("aiInput").value;
+  const box = document.getElementById("aiResponse");
+  box.style.display = "block";
+  box.innerHTML = `<strong>🤖 AI Insight:</strong> ${q || "India's wetlands"}: Prioritize restoration in Punjab, Rajasthan &amp; Haryana. High-risk: Kolleru, Deepor Beel, Basai. Integrated water management crucial.`;
+};
+
+window.quickAsk = function(q) {
+  setTab("ai");
+  document.getElementById("aiInput").value = q;
+  askAI();
+};
+
+// ============================================================
+// INITIALISE ON LOAD
+// ============================================================
+window.onload = () => {
+  renderMetrics();
+  renderStressors();
+  renderCritical();
+  renderTable(WETLANDS);
+  populateStateFilter();
+  renderCharts();
+  buildRamsarGrid();
+  // Map lazy-loads only when user clicks the Map tab
+};
+
+window.showDetail  = showDetail;
+window.filterTable = filterTable;
+    function toggleChat() {
+    const win = document.getElementById('chat-window');
+    win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
 }
+async function send() {
+    const input = document.getElementById('userInput');
+    const container = document.getElementById('messages');
+    const text = input.value.trim();
+    if(!text) return;
 
-function buildLongTerm() {
-  const indicators = [
-    {label:'Carbon sequestration', current:'-18%', outlook:'declining'},
-    {label:'Flood buffer capacity', current:'-24%', outlook:'declining'},
-    {label:'Water purification',    current:'-31%', outlook:'critical'},
-    {label:'Species richness',      current:'-12%', outlook:'declining'},
-    {label:'Sediment trapping',     current:'-40%', outlook:'critical'},
-  ];
-  document.getElementById('ltIndicators').innerHTML = indicators.map(i => `
-    <div class="indicator-row">
-      <span class="indicator-label">${i.label}</span>
-      <div class="indicator-right">
-        <span class="indicator-value" style="color:${i.outlook==='critical'?'var(--danger)':'var(--warning)'};">${i.current}</span>
-        <span class="badge ${i.outlook==='critical'?'badge-danger':'badge-warning'}">${i.outlook}</span>
-      </div>
-    </div>
-  `).join('');
-}
+    // 1. Show the user's message in the chat window
+    container.innerHTML += `<div class="u-msg">${text}</div>`;
+    input.value = "";
+    container.scrollTop = container.scrollHeight;
 
-function buildPriorityMatrix() {
-  const items = [
-    {name:'Rampur Marsh',   urgency:'Immediate', impact:'High',   action:'Emergency hydrological restoration'},
-    {name:'Kaveri Delta',   urgency:'Immediate', impact:'High',   action:'Sediment control + water diversion'},
-    {name:'Shola Wetland',  urgency:'Immediate', impact:'High',   action:'Pollution source identification'},
-    {name:'Tungabhadra',    urgency:'Near-term', impact:'Medium', action:'Buffer zone establishment'},
-    {name:'Nilgiri Bog',    urgency:'Near-term', impact:'Medium', action:'Vegetation monitoring'},
-  ];
-  document.getElementById('priorityMatrix').innerHTML = items.map(i => `
-    <div class="priority-item">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-        <span style="font-size:13px;font-weight:700;color:var(--text-primary);">${i.name}</span>
-        <span class="badge ${i.urgency==='Immediate'?'badge-danger':'badge-warning'}">${i.urgency}</span>
-      </div>
-      <div style="font-size:12px;color:var(--text-dim);">${i.action}</div>
-    </div>
-  `).join('');
-}
+    try {
+        // --- PASTE THE FETCH CODE RIGHT HERE ---
+        const response = await fetch('http://127.0.0.1:5000/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: text })
+        });
+        // ---------------------------------------
 
-function buildFactors() {
-  const factors = [
-    {label:'Land-use change',    value:78, color:'var(--danger)'},
-    {label:'Water diversion',    value:71, color:'#f97316'},
-    {label:'Pollution load',     value:65, color:'#f59e0b'},
-    {label:'Sediment accum.',    value:59, color:'var(--warning)'},
-    {label:'Human encroachment', value:52, color:'#a78bfa'},
-    {label:'Climate variation',  value:47, color:'var(--accent-blue)'},
-    {label:'Invasive species',   value:38, color:'var(--accent-teal)'},
-  ];
-  document.getElementById('factorBars').innerHTML = factors.map(f => `
-    <div class="factor-bar">
-      <span class="factor-label">${f.label}</span>
-      <div class="factor-track"><div class="factor-fill" style="width:${f.value}%;background:${f.color};"></div></div>
-      <span class="factor-pct">${f.value}%</span>
-    </div>
-  `).join('');
+        const data = await response.json();
 
-  const deps = [
-    {cluster:'Land + Sediment → Retention loss',           confidence:'91%', zones:3},
-    {cluster:'Pollution + Biodiversity crash',             confidence:'87%', zones:2},
-    {cluster:'Climate lag + Phenological shift',           confidence:'73%', zones:4},
-    {cluster:'Encroachment + Habitat fragmentation',       confidence:'68%', zones:2},
-  ];
-  document.getElementById('dependencyList').innerHTML = deps.map(d => `
-    <div class="dep-card">
-      <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">${d.cluster}</div>
-      <div style="display:flex;gap:8px;">
-        <span class="badge badge-info">Confidence ${d.confidence}</span>
-        <span class="badge badge-warning">${d.zones} clusters affected</span>
-      </div>
-    </div>
-  `).join('');
-}
+        // 2. Show the AI's response
+        container.innerHTML += `<div class="a-msg"><strong>Expert Analysis:</strong><br>${data.reply}</div>`;
+        container.scrollTop = container.scrollHeight;
 
-function switchTab(tab) {
-  ['overview','health','anomaly','predict','factors'].forEach(t => {
-    const el = document.getElementById('tab-'+t);
-    el.style.display = t === tab ? '' : 'none';
-  });
-  document.querySelectorAll('.tab').forEach((btn, i) => {
-    btn.classList.toggle('active', ['overview','health','anomaly','predict','factors'][i] === tab);
-  });
-}
-
-// Init
-buildMap();
-buildAtRisk();
-buildDataSources();
-buildHealthList();
-buildBiodiversity();
-buildAnomalies();
-buildMiniCharts();
-updatePrediction();
-buildLongTerm();
-buildPriorityMatrix();
-buildFactors();
-
-function sendPrompt(msg) {
-  console.log('AI Report Request:', msg);
-  alert('Generating: ' + msg);
+    } catch (err) {
+        // This runs if app.py is not running or there is a connection error
+        container.innerHTML += `<div style="color:var(--risk-critical); font-size:11px; text-align:center;">Backend Connection Lost.</div>`;
+    }
 }
 </script>
-<div id="chatbot-container">
-  <div id="chatbot-window" id="chatWin">
-    <div id="chatbot-header">
-      <span>Eco-Agent</span>
-      <span style="cursor:pointer" onclick="toggleEcoChat()">—</span>
+<div id="chat-logo" onclick="toggleChat()">
+        <i class="ti ti-message-chatbot" style="font-size: 28px;"></i>
     </div>
-    <div id="chatbot-messages">
-      <div style="background:#eff6ff; padding:8px; border-radius:8px; margin-bottom:10px;">
-        Hello! How can I help you analyze the wetland data today?
-      </div>
+
+    <div id="chat-window">
+        <div class="chat-header">
+            <h3><i class="ti ti-shield-check"></i> Eco-Agent Intelligence</h3>
+            <i class="ti ti-x" style="cursor:pointer; color: var(--text-secondary);" onclick="toggleChat()"></i>
+        </div>
+        <div id="messages">
+            <div class="a-msg">
+                <strong>System Online.</strong><br>
+                I am monitoring the 75 Ramsar sites. How can I assist with your telemetry analysis?
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="userInput" placeholder="Ask about site risks..." onkeypress="if(event.key==='Enter') send()">
+            <button onclick="send()"><i class="ti ti-send"></i></button>
+        </div>
     </div>
-    <div id="chatbot-input-area">
-      <input type="text" placeholder="Type a message...">
-      <button class="action-btn" style="padding:5px 10px;">Send</button>
-    </div>
-  </div>
-  <div id="chatbot-toggle" onclick="toggleEcoChat()">
-    <i class="ti ti-messages" style="font-size: 24px;"></i>
-  </div>
-</div>
 </body>
 </html>

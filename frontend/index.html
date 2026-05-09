@@ -5,146 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>India Ramsar Wetlands — AI Ecological Monitor + Interactive Map</title>
 
-    <!-- Leaflet CSS & JS — unchanged for map functionality -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!--
-    ============================================================
-    DARK THEME DESIGN SYSTEM
-    ============================================================
-    Aesthetic direction: "Deep Ocean Research Terminal"
-    Tone: scientific, authoritative, refined dark UI
-
-    Font pairing:
-      • "Syne" (Google Fonts) — geometric, distinctive display font
-        for headings and metric values. Bold, modern, memorable.
-      • "IBM Plex Sans" — neutral, highly legible body font designed
-        for data-dense interfaces. Excellent at small sizes.
-
-    Color philosophy:
-      • Base layer: near-black #0d1117 (GitHub dark, easy on eyes)
-      • Card surface: #161b22 — subtle 1-step lift for hierarchy
-      • Elevated surface: #1c2333 — hover states and active elements
-      • Primary accent: #2dd4bf (teal-400) — ecological / water theme
-      • Secondary accent: #38bdf8 (sky-400) — links and interactive
-      • All risk colors preserved but luminance-adjusted for dark context
-
-    Spacing philosophy:
-      • Generous padding (1.5–2rem) to avoid claustrophobic density
-      • 1px borders using semi-transparent white at 8% opacity
-        creates depth without harsh lines
-
-    Accessibility:
-      • Minimum contrast ratio 4.5:1 for body text on dark surfaces
-      • Focus outlines maintained for keyboard navigation
-      • ARIA labels on interactive elements preserved
-    ============================================================
-    -->
-
-    <!-- Typography: Syne for display + IBM Plex Sans for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
     <style>
-        /* ============================================================
-           CSS CUSTOM PROPERTIES — Dark Design Tokens
-           ============================================================ */
         :root {
-            /* --- Surfaces (layered z-depth using brightness) --- */
-            --bg-base:      #0d1117;   /* page background */
-            --bg-card:      #161b22;   /* card / panel surface */
-            --bg-elevated:  #1c2333;   /* hover, active, inputs */
-            --bg-overlay:   #21262d;   /* tooltips, dropdowns */
-
-            /* --- Borders (subtle, not harsh) --- */
+            --bg-base:      #0d1117;
+            --bg-card:      #161b22;
+            --bg-elevated:  #1c2333;
+            --bg-overlay:   #21262d;
             --border:       rgba(255, 255, 255, 0.08);
             --border-focus: rgba(45, 212, 191, 0.5);
-
-            /* --- Text hierarchy --- */
-            --text-primary:   #e6edf3;   /* main content — near-white */
-            --text-secondary: #8b949e;   /* metadata, labels */
-            --text-muted:     #484f58;   /* placeholder, disabled */
-            --text-accent:    #2dd4bf;   /* primary accent — teal */
-            --text-link:      #38bdf8;   /* interactive / sky blue */
-
-            /* --- Accent / Brand --- */
-            --accent-primary:   #2dd4bf;   /* teal — water / ecology */
-            --accent-secondary: #38bdf8;   /* sky blue */
+            --text-primary:   #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted:     #484f58;
+            --text-accent:    #2dd4bf;
+            --text-link:      #38bdf8;
+            --accent-primary:   #2dd4bf;
+            --accent-secondary: #38bdf8;
             --accent-glow:      rgba(45, 212, 191, 0.15);
-
-            /* --- Risk status palette (dark-optimized) ---
-               Colors are slightly lighter/more vivid than light-theme
-               variants to maintain legibility on dark backgrounds */
-            --risk-critical:  #f87171;   /* red-400 */
-            --risk-high:      #fb923c;   /* orange-400 */
-            --risk-moderate:  #60a5fa;   /* blue-400 */
-            --risk-low:       #4ade80;   /* green-400 */
-            --risk-stable:    #34d399;   /* emerald-400 */
-
-            /* --- Shadows — dark theme needs glow, not drop shadow --- */
+            --risk-critical:  #f87171;
+            --risk-high:      #fb923c;
+            --risk-moderate:  #60a5fa;
+            --risk-low:       #4ade80;
+            --risk-stable:    #34d399;
             --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
             --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
             --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
             --glow-accent: 0 0 20px rgba(45,212,191,0.12);
-
-            /* --- Layout --- */
             --radius-lg: 12px;
             --radius-md: 8px;
             --radius-sm: 6px;
         }
-
-        /* ============================================================
-           RESET & BASE
-           ============================================================ */
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Subtle grid-texture background for depth */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-base);
-            /* Subtle dot-grid for texture — barely visible */
-            background-image: radial-gradient(
-                circle, rgba(255,255,255,0.03) 1px, transparent 1px
-            );
+            background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
             background-size: 32px 32px;
             color: var(--text-primary);
             line-height: 1.6;
             padding: 2rem;
             min-height: 100vh;
         }
-
-        /* ============================================================
-           LAYOUT WRAPPER
-           ============================================================ */
-        .dash {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* ============================================================
-           HEADER
-           ============================================================ */
+        .dash { max-width: 1400px; margin: 0 auto; }
         .header {
             margin-bottom: 2rem;
-            /* Glowing left accent bar instead of a plain bottom border */
             padding: 1.5rem 0 1.5rem 1.5rem;
             border-left: 3px solid var(--accent-primary);
             position: relative;
         }
-        /* Ambient glow behind the accent bar */
         .header::before {
             content: '';
             position: absolute;
-            left: -1px;
-            top: 0;
-            height: 100%;
-            width: 120px;
+            left: -1px; top: 0;
+            height: 100%; width: 120px;
             background: linear-gradient(90deg, var(--accent-glow), transparent);
             pointer-events: none;
         }
@@ -158,7 +77,6 @@
             align-items: center;
             gap: 12px;
         }
-        /* Teal highlight on the title accent word */
         .header h1 .accent { color: var(--accent-primary); }
         .header p {
             font-size: 14px;
@@ -167,10 +85,6 @@
             font-weight: 300;
             letter-spacing: 0.02em;
         }
-
-        /* ============================================================
-           METRICS GRID
-           ============================================================ */
         .metrics {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -183,7 +97,6 @@
             border-radius: var(--radius-lg);
             padding: 1.25rem;
             box-shadow: var(--shadow-sm);
-            /* Subtle top highlight line — simulates light source from above */
             position: relative;
             overflow: hidden;
             transition: border-color 0.2s, box-shadow 0.2s;
@@ -195,35 +108,13 @@
             height: 1px;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
         }
-        .metric:hover {
-            border-color: rgba(45,212,191,0.2);
-            box-shadow: var(--shadow-md), var(--glow-accent);
-        }
-        .metric-label {
-            font-size: 10px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            margin-bottom: 6px;
-        }
-        /* Syne for the big numbers — feels authoritative and data-forward */
-        .metric-val {
-            font-family: 'Syne', sans-serif;
-            font-size: 30px;
-            font-weight: 800;
-            color: var(--text-primary);
-            line-height: 1;
-        }
-
-        /* ============================================================
-           TABS
-           ============================================================ */
+        .metric:hover { border-color: rgba(45,212,191,0.2); box-shadow: var(--shadow-md), var(--glow-accent); }
+        .metric-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 6px; }
+        .metric-val { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; color: var(--text-primary); line-height: 1; }
         .tabs {
             display: flex;
             gap: 4px;
             margin-bottom: 2rem;
-            /* Dark pill container */
             background: var(--bg-card);
             padding: 4px;
             border-radius: var(--radius-md);
@@ -244,34 +135,16 @@
             transition: all 0.18s ease;
         }
         .tab.active {
-            /* Active tab lifts off the container */
             background: var(--bg-elevated);
             color: var(--text-accent);
             box-shadow: 0 1px 4px rgba(0,0,0,0.4);
             border: 1px solid rgba(45,212,191,0.25);
         }
-        .tab:hover:not(.active) {
-            color: var(--text-primary);
-            background: rgba(255,255,255,0.04);
-        }
-        .tab:focus-visible {
-            outline: 2px solid var(--border-focus);
-            outline-offset: 2px;
-        }
-
-        /* ============================================================
-           PANEL TRANSITIONS
-           ============================================================ */
+        .tab:hover:not(.active) { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+        .tab:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
         .panel { display: none; animation: fadeSlide 0.22s ease; }
         .panel.active { display: block; }
-        @keyframes fadeSlide {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ============================================================
-           CARDS — universal dark surface
-           ============================================================ */
+        @keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -281,7 +154,6 @@
             position: relative;
             overflow: hidden;
         }
-        /* Faint top shimmer line on every card */
         .card::before {
             content: '';
             position: absolute;
@@ -289,578 +161,212 @@
             height: 1px;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
         }
-        .chart-label {
-            font-family: 'Syne', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-        }
-
-        /* ============================================================
-           LAYOUT HELPERS
-           ============================================================ */
-        .two-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.25rem;
-        }
-
-        /* ============================================================
-           MAP CONTAINER
-           — Map styles are carefully scoped so Leaflet internals
-             are not disrupted. Only the wrapper and overlay panel
-             are re-skinned.
-           ============================================================ */
-        .map-container {
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
-            margin-bottom: 1.25rem;
-            position: relative;
-            z-index: 1;
-        }
-        /* Map canvas height — unchanged from original */
-        #indiaMap {
-            height: 540px;
-            width: 100%;
-            /* Dark tile variant is used in JS — background matches */
-            background: #1a2332;
-            z-index: 1;
-        }
-        /* Leaflet popup dark skin */
-        .leaflet-popup-content-wrapper {
-            background: var(--bg-overlay) !important;
-            color: var(--text-primary) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 10px !important;
-            font-family: 'IBM Plex Sans', sans-serif !important;
-            box-shadow: var(--shadow-lg) !important;
-        }
-        .leaflet-popup-tip {
-            background: var(--bg-overlay) !important;
-        }
-        .leaflet-tooltip {
-            background: var(--bg-overlay) !important;
-            border: 1px solid var(--border) !important;
-            color: var(--text-primary) !important;
-            font-family: 'IBM Plex Sans', sans-serif !important;
-            font-size: 12px !important;
-            border-radius: 6px !important;
-        }
-        /* Marker hover scale — unchanged */
-        .custom-marker div {
-            transition: transform 0.05s ease, box-shadow 0.1s;
-        }
-        .custom-marker:hover div {
-            transform: scale(1.25);
-            box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 0 10px rgba(45,212,191,0.4);
-        }
-
-        /* ============================================================
-           MAP INFO PANEL (hover details)
-           ============================================================ */
-        .map-info-panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 1.25rem 1.5rem;
-            margin-top: 1rem;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.15s ease;
-        }
-        .map-info-panel h4 {
-            font-family: 'Syne', sans-serif;
-            font-size: 0.85rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 0.85rem;
-            color: var(--text-accent);
-            border-left: 3px solid var(--accent-primary);
-            padding-left: 12px;
-        }
-        .map-info-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 0.65rem;
-            font-size: 0.82rem;
-        }
-        .map-info-details div {
-            /* Each data cell gets a slightly elevated background */
-            background: var(--bg-elevated);
-            padding: 10px 14px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            transition: background 0.1s;
-        }
-        .map-info-details div:hover {
-            background: var(--bg-overlay);
-        }
-        .info-label {
-            font-weight: 600;
-            color: var(--text-secondary);
-            letter-spacing: 0.06em;
-            font-size: 0.68rem;
-            text-transform: uppercase;
-            display: block;
-        }
-        .info-value {
-            font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            margin-top: 3px;
-        }
-        /* Inline risk badge on the map panel */
-        .risk-badge-map {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-        /* Legend strip below the map */
-        .map-legend {
-            margin-top: 1rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 0.7rem 1.2rem;
-            border-radius: 40px;
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-        }
+        .chart-label { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 1rem; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        .map-container { background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-md); margin-bottom: 1.25rem; position: relative; z-index: 1; }
+        #indiaMap { height: 540px; width: 100%; background: #1a2332; z-index: 1; }
+        .leaflet-popup-content-wrapper { background: var(--bg-overlay) !important; color: var(--text-primary) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; font-family: 'IBM Plex Sans', sans-serif !important; box-shadow: var(--shadow-lg) !important; }
+        .leaflet-popup-tip { background: var(--bg-overlay) !important; }
+        .leaflet-tooltip { background: var(--bg-overlay) !important; border: 1px solid var(--border) !important; color: var(--text-primary) !important; font-family: 'IBM Plex Sans', sans-serif !important; font-size: 12px !important; border-radius: 6px !important; }
+        /* Marker click state ring */
+        .custom-marker div { transition: transform 0.12s ease, box-shadow 0.15s; }
+        .custom-marker.selected div { transform: scale(1.4); box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 0 14px rgba(45,212,191,0.6) !important; }
+        .map-info-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-top: 1rem; box-shadow: var(--shadow-sm); transition: all 0.15s ease; }
+        .map-info-panel h4 { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; margin-bottom: 0.85rem; color: var(--text-accent); border-left: 3px solid var(--accent-primary); padding-left: 12px; }
+        .map-info-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.65rem; font-size: 0.82rem; }
+        .map-info-details div { background: var(--bg-elevated); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); transition: background 0.1s; }
+        .map-info-details div:hover { background: var(--bg-overlay); }
+        .info-label { font-weight: 600; color: var(--text-secondary); letter-spacing: 0.06em; font-size: 0.68rem; text-transform: uppercase; display: block; }
+        .info-value { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--text-primary); font-size: 0.9rem; margin-top: 3px; }
+        .risk-badge-map { display: inline-block; padding: 2px 10px; border-radius: 30px; font-size: 0.7rem; font-weight: 700; }
+        .map-legend { margin-top: 1rem; background: var(--bg-card); border: 1px solid var(--border); padding: 0.7rem 1.2rem; border-radius: 40px; font-size: 0.78rem; color: var(--text-secondary); display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; align-items: center; }
         .map-legend span { display: flex; align-items: center; gap: 4px; }
-
-        /* ============================================================
-           RISK BADGES — for table and popups
-           ============================================================ */
-        .badge {
-            font-size: 10px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-        /* Dark-optimized badge backgrounds — semi-transparent tints */
+        .badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; }
         .badge-critical  { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
         .badge-high      { background: rgba(251,146,60,0.15);  color: #fb923c; border: 1px solid rgba(251,146,60,0.3);  }
         .badge-moderate  { background: rgba(96,165,250,0.15);  color: #60a5fa; border: 1px solid rgba(96,165,250,0.3);  }
         .badge-low       { background: rgba(74,222,128,0.15);  color: #4ade80; border: 1px solid rgba(74,222,128,0.3);  }
         .badge-stable    { background: rgba(52,211,153,0.15);  color: #34d399; border: 1px solid rgba(52,211,153,0.3);  }
-
-        /* ============================================================
-           DATA TABLE
-           ============================================================ */
         .table-wrap { overflow-x: auto; }
-        table#wetlandTable {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.82rem;
-        }
-        table#wetlandTable thead th {
-            background: var(--bg-elevated);
-            color: var(--text-secondary);
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            padding: 10px 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            /* Sticky header for long tables */
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-        table#wetlandTable tbody tr {
-            border-bottom: 1px solid var(--border);
-            transition: background 0.12s;
-        }
-        table#wetlandTable tbody tr:hover {
-            background: var(--bg-elevated);
-        }
-        table#wetlandTable tbody td {
-            padding: 10px 12px;
-            color: var(--text-primary);
-            vertical-align: middle;
-        }
-        table#wetlandTable tbody td:first-child {
-            color: var(--text-muted);
-            font-size: 11px;
-        }
-        /* Wetland name column — bold and teal on hover */
-        table#wetlandTable tbody td:nth-child(2) {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        /* ============================================================
-           SEARCH / FILTER ROW
-           ============================================================ */
-        .search-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 1.25rem;
-        }
-        .search-row input,
-        .search-row select {
-            padding: 9px 16px;
-            border-radius: 40px;
-            /* Dark input styling */
-            border: 1px solid var(--border);
-            background: var(--bg-elevated);
-            color: var(--text-primary);
-            font-family: 'IBM Plex Sans', sans-serif;
-            font-size: 0.83rem;
-            transition: border-color 0.18s, box-shadow 0.18s;
-            outline: none;
-        }
+        table#wetlandTable { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        table#wetlandTable thead th { background: var(--bg-elevated); color: var(--text-secondary); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; }
+        table#wetlandTable tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; }
+        table#wetlandTable tbody tr:hover { background: var(--bg-elevated); }
+        table#wetlandTable tbody td { padding: 10px 12px; color: var(--text-primary); vertical-align: middle; }
+        table#wetlandTable tbody td:first-child { color: var(--text-muted); font-size: 11px; }
+        table#wetlandTable tbody td:nth-child(2) { font-weight: 600; color: var(--text-primary); }
+        .search-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+        .search-row input, .search-row select { padding: 9px 16px; border-radius: 40px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.83rem; transition: border-color 0.18s, box-shadow 0.18s; outline: none; }
         .search-row input::placeholder { color: var(--text-muted); }
-        .search-row input:focus,
-        .search-row select:focus {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px rgba(45,212,191,0.1);
-        }
-        /* Fix select arrow color in dark mode */
-        .search-row select option {
-            background: var(--bg-overlay);
-            color: var(--text-primary);
-        }
-
-        /* ============================================================
-           SMALL BUTTON
-           ============================================================ */
-        .btn-sm {
-            padding: 6px 14px;
-            font-size: 11px;
-            font-family: 'IBM Plex Sans', sans-serif;
-            font-weight: 600;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: var(--bg-elevated);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.15s;
-            letter-spacing: 0.03em;
-        }
-        .btn-sm:hover {
-            background: var(--bg-overlay);
-            color: var(--text-accent);
-            border-color: rgba(45,212,191,0.3);
-        }
-
-        /* ============================================================
-           RAMSAR GRID (color-coded wetland squares)
-           ============================================================ */
-        .ramsar-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            padding: 8px 0;
-        }
+        .search-row input:focus, .search-row select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(45,212,191,0.1); }
+        .search-row select option { background: var(--bg-overlay); color: var(--text-primary); }
+        .btn-sm { padding: 6px 14px; font-size: 11px; font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; }
+        .btn-sm:hover { background: var(--bg-overlay); color: var(--text-accent); border-color: rgba(45,212,191,0.3); }
+        .ramsar-grid { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 0; }
+        /* Grid squares: click-activated, no hover tooltip via title */
         .grid-square {
-            width: 30px;
-            height: 30px;
+            width: 30px; height: 30px;
             border-radius: var(--radius-sm);
-            transition: transform 0.1s, box-shadow 0.1s;
+            transition: transform 0.12s, box-shadow 0.12s, outline 0.1s;
             cursor: pointer;
-            /* Dark-mode squares need a subtle dark border to pop */
             border: 1px solid rgba(0,0,0,0.3);
             opacity: 0.85;
         }
-        .grid-square:hover {
-            transform: scale(1.15);
+        .grid-square:hover { opacity: 1; }
+        .grid-square.sq-active {
+            transform: scale(1.2);
             opacity: 1;
-            box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px rgba(45,212,191,0.4);
+            outline: 2px solid rgba(255,255,255,0.8);
+            outline-offset: 1px;
+            box-shadow: 0 0 10px rgba(45,212,191,0.5);
         }
-
-        /* ============================================================
-           AI PANEL
-           ============================================================ */
-        .ai-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-        }
-        .ai-box p {
-            color: var(--text-secondary);
-            margin-bottom: 1.25rem;
-            font-size: 0.88rem;
-        }
-        .ai-prompt {
-            display: flex;
-            gap: 10px;
-        }
-        .ai-prompt input {
-            flex: 1;
-            padding: 10px 18px;
-            border-radius: 40px;
-            border: 1px solid var(--border);
-            background: var(--bg-elevated);
-            color: var(--text-primary);
-            font-family: 'IBM Plex Sans', sans-serif;
-            font-size: 0.85rem;
-            outline: none;
-            transition: border-color 0.18s, box-shadow 0.18s;
-        }
-        .ai-prompt input::placeholder { color: var(--text-muted); }
-        .ai-prompt input:focus {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px rgba(45,212,191,0.1);
-        }
-        .ai-prompt button {
-            padding: 10px 22px;
-            border-radius: 40px;
-            border: none;
-            background: var(--accent-primary);
-            color: #0d1117;    /* dark text on teal — great contrast */
-            font-family: 'Syne', sans-serif;
-            font-size: 0.83rem;
-            font-weight: 700;
-            cursor: pointer;
-            letter-spacing: 0.04em;
-            transition: opacity 0.15s, transform 0.1s;
-        }
-        .ai-prompt button:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-        .ai-response {
-            margin-top: 1.5rem;
+        /* Click info strip below the grid */
+        #grid-info-strip {
+            margin-top: 10px;
             background: var(--bg-elevated);
             border: 1px solid rgba(45,212,191,0.2);
             border-left: 3px solid var(--accent-primary);
-            border-radius: var(--radius-md);
-            padding: 1.25rem;
-            font-size: 0.88rem;
+            border-radius: var(--radius-sm);
+            padding: 10px 16px;
+            font-size: 0.82rem;
             color: var(--text-primary);
-            line-height: 1.7;
+            display: none;
+            animation: fadeSlide 0.18s ease;
         }
-
-        /* ============================================================
-           STRESSORS & CRITICAL LISTS
-           ============================================================ */
-        #stressors div, #critical-list div {
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-        #stressors div:last-child,
-        #critical-list div:last-child { border-bottom: none; }
-        #stressors strong, #critical-list strong {
-            color: var(--text-primary);
-        }
-
-        /* ============================================================
-           DETAIL MODAL (inline)
-           ============================================================ */
-        .detail-modal {
-            background: var(--bg-elevated);
-            border: 1px solid rgba(45,212,191,0.2);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-        }
-        .detail-modal h3 {
-            font-family: 'Syne', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-        }
-        .detail-modal p {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            margin-bottom: 12px;
-        }
-
-        /* ============================================================
-           HEALTH BAR (in table)
-           ============================================================ */
-        .health-bar {
-            /* Dark base track */
-            background: var(--bg-elevated) !important;
-            border-radius: 4px;
-            margin-bottom: 2px;
-        }
-
-        /* ============================================================
-           RESPONSIVE
-           ============================================================ */
-        @media (max-width: 768px) {
-            body { padding: 1rem; }
-            .two-col { grid-template-columns: 1fr; }
-            .tabs {
-                width: 100%;
-                justify-content: center;
-            }
-            .header h1 { font-size: 20px; }
-            .metric-val { font-size: 24px; }
-        }
-
-        /* ============================================================
-           SCROLLBAR (WebKit) — dark-themed
-           ============================================================ */
+        #grid-info-strip.visible { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .grid-strip-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; }
+        .grid-strip-meta { color: var(--text-secondary); font-size: 0.78rem; }
+        .ai-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; }
+        .ai-box p { color: var(--text-secondary); margin-bottom: 1.25rem; font-size: 0.88rem; }
+        .ai-prompt { display: flex; gap: 10px; }
+        .ai-prompt input { flex: 1; padding: 10px 18px; border-radius: 40px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.85rem; outline: none; transition: border-color 0.18s, box-shadow 0.18s; }
+        .ai-prompt input::placeholder { color: var(--text-muted); }
+        .ai-prompt input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(45,212,191,0.1); }
+        .ai-prompt button { padding: 10px 22px; border-radius: 40px; border: none; background: var(--accent-primary); color: #0d1117; font-family: 'Syne', sans-serif; font-size: 0.83rem; font-weight: 700; cursor: pointer; letter-spacing: 0.04em; transition: opacity 0.15s, transform 0.1s; }
+        .ai-prompt button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .ai-prompt button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .ai-response { margin-top: 1.5rem; background: var(--bg-elevated); border: 1px solid rgba(45,212,191,0.2); border-left: 3px solid var(--accent-primary); border-radius: var(--radius-md); padding: 1.25rem; font-size: 0.88rem; color: var(--text-primary); line-height: 1.7; }
+        #stressors div, #critical-list div { padding: 8px 0; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 0.85rem; }
+        #stressors div:last-child, #critical-list div:last-child { border-bottom: none; }
+        #stressors strong, #critical-list strong { color: var(--text-primary); }
+        .detail-modal { background: var(--bg-elevated); border: 1px solid rgba(45,212,191,0.2); border-radius: var(--radius-lg); padding: 1.5rem; }
+        .detail-modal h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+        .detail-modal p { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px; }
+        .health-bar { background: var(--bg-elevated) !important; border-radius: 4px; margin-bottom: 2px; }
+        @media (max-width: 768px) { body { padding: 1rem; } .two-col { grid-template-columns: 1fr; } .tabs { width: 100%; justify-content: center; } .header h1 { font-size: 20px; } .metric-val { font-size: 24px; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-base); }
-        ::-webkit-scrollbar-thumb {
-            background: var(--bg-elevated);
-            border-radius: 3px;
-        }
+        ::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #30363d; }
 
-        /* ============================================================
-           CHART.JS — global dark override injected via JS
-           (see script section for Chart.defaults)
-           ============================================================ */
-        /* ============================================================
-       FLOATING AGENTIC CHATBOT (INTEGRATED)
-       ============================================================ */
+        /* ── FLOATING CHATBOT ── */
+        #chat-logo { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bg-base); cursor: pointer; box-shadow: var(--shadow-lg), 0 0 20px rgba(45, 212, 191, 0.3); z-index: 2000; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #chat-logo:hover { transform: scale(1.1) rotate(5deg); }
+        #chat-window { position: fixed; bottom: 105px; right: 30px; width: 380px; height: 550px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); display: none; flex-direction: column; box-shadow: var(--shadow-lg); z-index: 1999; overflow: hidden; animation: fadeSlide 0.3s ease; }
+        .chat-header { background: var(--bg-elevated); padding: 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .chat-header h3 { font-family: 'Syne', sans-serif; font-size: 14px; color: var(--accent-primary); margin: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+        .chat-status { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+        #messages { flex: 1; padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: var(--bg-base); }
+        .u-msg { align-self: flex-end; background: var(--accent-primary); color: var(--bg-base); padding: 10px 14px; border-radius: 12px 12px 0 12px; font-size: 13px; max-width: 80%; font-weight: 500; }
+        .a-msg { align-self: flex-start; background: var(--bg-elevated); color: var(--text-primary); padding: 10px 14px; border-radius: 12px 12px 12px 0; font-size: 13px; max-width: 85%; border: 1px solid var(--border); line-height: 1.5; }
+        .a-msg.thinking { opacity: 0.6; font-style: italic; }
+        .a-msg.error { border-color: rgba(248,113,113,0.3); color: #f87171; }
+        .chat-input-area { padding: 1rem; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; gap: 8px; }
+        .chat-input-area input { flex: 1; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 15px; border-radius: 40px; outline: none; font-size: 13px; font-family: 'IBM Plex Sans', sans-serif; transition: border-color 0.18s; }
+        .chat-input-area input:focus { border-color: var(--border-focus); }
+        .chat-input-area input:disabled { opacity: 0.5; }
+        .chat-input-area button { background: var(--accent-primary); border: none; color: var(--bg-base); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; font-size: 16px; }
+        .chat-input-area button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* The Floating Logo (Step 1a) */
-    #chat-logo {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        width: 60px;
-        height: 60px;
-        background: var(--accent-primary);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--bg-base); /* Contrast text */
-        cursor: pointer;
-        box-shadow: var(--shadow-lg), 0 0 20px rgba(45, 212, 191, 0.3);
-        z-index: 2000;
-        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    #chat-logo:hover { transform: scale(1.1) rotate(5deg); }
-
-    /* The Chat Window (Step 1b) */
-    #chat-window {
-        position: fixed;
-        bottom: 105px;
-        right: 30px;
-        width: 380px;
-        height: 550px;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
-        display: none; /* Controlled by JS */
-        flex-direction: column;
-        box-shadow: var(--shadow-lg);
-        z-index: 1999;
-        overflow: hidden;
-        animation: fadeSlide 0.3s ease;
-    }
-
-    .chat-header {
-        background: var(--bg-elevated);
-        padding: 1.25rem;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .chat-header h3 {
-        font-family: 'Syne', sans-serif;
-        font-size: 14px;
-        color: var(--accent-primary);
-        margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    #messages {
-        flex: 1;
-        padding: 1.25rem;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        background: var(--bg-base);
-    }
-
-    .u-msg {
-        align-self: flex-end;
-        background: var(--accent-primary);
-        color: var(--bg-base);
-        padding: 10px 14px;
-        border-radius: 12px 12px 0 12px;
-        font-size: 13px;
-        max-width: 80%;
-        font-weight: 500;
-    }
-
-    .a-msg {
-        align-self: flex-start;
-        background: var(--bg-elevated);
-        color: var(--text-primary);
-        padding: 10px 14px;
-        border-radius: 12px 12px 12px 0;
-        font-size: 13px;
-        max-width: 85%;
-        border: 1px solid var(--border);
-        line-height: 1.5;
-    }
-
-    .chat-input-area {
-        padding: 1rem;
-        background: var(--bg-card);
-        border-top: 1px solid var(--border);
-        display: flex;
-        gap: 8px;
-    }
-
-    .chat-input-area input {
-        flex: 1;
-        background: var(--bg-elevated);
-        border: 1px solid var(--border);
-        color: var(--text-primary);
-        padding: 10px 15px;
-        border-radius: 40px;
-        outline: none;
-        font-size: 13px;
-    }
-
-    .chat-input-area button {
-        background: var(--accent-primary);
-        border: none;
-        color: var(--bg-base);
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.2s;
-    }
+        /* ── NGT ACTION MODULE ── */
+        .ngt-hero { background: linear-gradient(135deg, #0a1628 0%, #0d1117 40%, #0e1f14 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem 2rem 2rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+        .ngt-hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse 60% 40% at 80% 20%, rgba(45,212,191,0.08) 0%, transparent 60%), radial-gradient(ellipse 40% 60% at 20% 80%, rgba(56,189,248,0.05) 0%, transparent 60%); pointer-events: none; }
+        .ngt-hero::after { content: ''; position: absolute; top: 0; left: -100%; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(45,212,191,0.4), transparent); animation: scanline 4s ease-in-out infinite; }
+        @keyframes scanline { 0% { left: -100%; } 100% { left: 100%; } }
+        .ngt-hero-inner { position: relative; z-index: 1; }
+        .ngt-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.25); color: #f87171; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 1rem; }
+        .ngt-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #f87171; animation: pulse-dot 1.5s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+        .ngt-hero h2 { font-family: 'Syne', sans-serif; font-size: clamp(20px, 3vw, 28px); font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.75rem; }
+        .ngt-hero h2 em { color: var(--accent-primary); font-style: normal; }
+        .ngt-hero p { color: var(--text-secondary); font-size: 0.88rem; max-width: 680px; line-height: 1.7; }
+        .ngt-hero-stats { display: flex; gap: 2rem; margin-top: 1.5rem; flex-wrap: wrap; }
+        .ngt-stat { display: flex; flex-direction: column; }
+        .ngt-stat-val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--text-primary); line-height: 1; }
+        .ngt-stat-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
+        .ngt-routes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        @media (max-width: 860px) { .ngt-routes { grid-template-columns: 1fr; } }
+        .route-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; position: relative; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; cursor: default; }
+        .route-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+        .route-card.route-formal::before { background: linear-gradient(90deg, #f87171, #fb923c); }
+        .route-card.route-admin::before  { background: linear-gradient(90deg, #60a5fa, #818cf8); }
+        .route-card.route-media::before  { background: linear-gradient(90deg, #4ade80, #2dd4bf); }
+        .route-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .route-card.route-formal:hover { border-color: rgba(248,113,113,0.3); }
+        .route-card.route-admin:hover  { border-color: rgba(96,165,250,0.3); }
+        .route-card.route-media:hover  { border-color: rgba(74,222,128,0.3); }
+        .route-icon { font-size: 28px; margin-bottom: 0.85rem; display: block; }
+        .route-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 8px; border-radius: 10px; margin-bottom: 0.6rem; display: inline-block; }
+        .route-card.route-formal .route-tag { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.2); }
+        .route-card.route-admin .route-tag  { background: rgba(96,165,250,0.12);  color: #60a5fa; border: 1px solid rgba(96,165,250,0.2); }
+        .route-card.route-media .route-tag  { background: rgba(74,222,128,0.12);  color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+        .route-card h3 { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+        .route-card p { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem; }
+        .route-action { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; font-family: 'IBM Plex Sans', sans-serif; text-decoration: none; padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; }
+        .route-card.route-formal .route-action:hover { background: rgba(248,113,113,0.1); color: #f87171; border-color: rgba(248,113,113,0.3); }
+        .route-card.route-admin .route-action:hover  { background: rgba(96,165,250,0.1);  color: #60a5fa; border-color: rgba(96,165,250,0.3); }
+        .route-card.route-media .route-action:hover  { background: rgba(74,222,128,0.1);  color: #4ade80; border-color: rgba(74,222,128,0.3); }
+        .ngt-lower { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        @media (max-width: 860px) { .ngt-lower { grid-template-columns: 1fr; } }
+        .ngt-section-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-accent); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+        .ngt-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .ngt-field { margin-bottom: 0.85rem; }
+        .ngt-field label { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 5px; }
+        .ngt-field input, .ngt-field select, .ngt-field textarea { width: 100%; padding: 9px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); font-family: 'IBM Plex Sans', sans-serif; font-size: 0.82rem; outline: none; transition: border-color 0.18s, box-shadow 0.18s; resize: none; }
+        .ngt-field input:focus, .ngt-field select:focus, .ngt-field textarea:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(45,212,191,0.08); }
+        .ngt-field select option { background: var(--bg-overlay); color: var(--text-primary); }
+        .ngt-field input::placeholder, .ngt-field textarea::placeholder { color: var(--text-muted); }
+        .ngt-btn-primary { width: 100%; padding: 11px 20px; border-radius: var(--radius-sm); border: none; background: var(--accent-primary); color: #0d1117; font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; transition: opacity 0.15s, transform 0.1s; margin-top: 0.5rem; }
+        .ngt-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+        #ngt-letter-preview { display: none; margin-top: 1rem; background: var(--bg-elevated); border: 1px solid rgba(45,212,191,0.15); border-left: 3px solid var(--accent-primary); border-radius: var(--radius-md); padding: 1.25rem; font-size: 0.8rem; color: var(--text-primary); line-height: 1.8; white-space: pre-wrap; font-family: 'IBM Plex Mono', 'Courier New', monospace; max-height: 320px; overflow-y: auto; }
+        .ngt-letter-actions { display: flex; gap: 8px; margin-top: 0.75rem; }
+        .ngt-letter-actions button { flex: 1; padding: 8px 14px; font-size: 11px; font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+        .ngt-letter-actions button:hover { background: var(--bg-overlay); color: var(--text-accent); border-color: rgba(45,212,191,0.3); }
+        .ngt-letter-actions button.primary-action { background: rgba(45,212,191,0.1); color: var(--accent-primary); border-color: rgba(45,212,191,0.3); }
+        .issue-priority-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .issue-submitted { display: none; text-align: center; padding: 1.5rem; }
+        .issue-submitted .check-icon { font-size: 36px; display: block; margin-bottom: 0.5rem; }
+        .issue-submitted h4 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.35rem; }
+        .issue-submitted p { font-size: 0.8rem; color: var(--text-secondary); }
+        .action-steps { counter-reset: step; }
+        .action-step { display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+        .action-step:last-child { border-bottom: none; }
+        .step-num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 800; color: var(--text-accent); margin-top: 2px; }
+        .step-body h4 { font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+        .step-body p { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; }
+        .step-body .step-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-primary); margin-bottom: 4px; display: block; }
+        .step-complete { font-size: 10px; font-weight: 600; color: #4ade80; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); padding: 2px 8px; border-radius: 10px; margin-top: 6px; display: inline-block; }
+        .bench-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 0.5rem; }
+        @media (max-width: 600px) { .bench-grid { grid-template-columns: 1fr; } }
+        .bench-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; transition: border-color 0.15s, background 0.15s; }
+        .bench-card:hover { background: var(--bg-overlay); border-color: rgba(45,212,191,0.2); }
+        .bench-name { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+        .bench-states { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
+        .bench-highlight { color: var(--accent-primary); font-weight: 600; }
+        .api-box { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-top: 0.75rem; }
+        .api-endpoint { font-family: 'IBM Plex Mono', 'Courier New', monospace; font-size: 0.78rem; color: var(--accent-primary); background: var(--bg-base); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; margin: 0.5rem 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .copy-btn { font-size: 10px; font-weight: 600; font-family: 'IBM Plex Sans', sans-serif; color: var(--text-muted); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color 0.15s; }
+        .copy-btn:hover { color: var(--text-accent); }
+        .copy-btn.copied { color: #4ade80; }
+        .ngt-bottom-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        @media (max-width: 860px) { .ngt-bottom-row { grid-template-columns: 1fr; } }
+        .ngt-toast { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--bg-overlay); border: 1px solid rgba(45,212,191,0.3); color: var(--text-primary); padding: 10px 20px; border-radius: 40px; font-size: 12px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 3000; white-space: nowrap; }
+        .ngt-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
 <div class="dash">
 
-  <!-- ===== HEADER ===== -->
   <div class="header">
     <h1>
       <span style="font-size:1.2em;">🌿</span>
@@ -869,19 +375,18 @@
     <p>98 Ramsar-designated wetlands &nbsp;·&nbsp; Health scores, degradation risk &amp; biodiversity analysis &nbsp;·&nbsp; Interactive Map Explorer</p>
   </div>
 
-  <!-- ===== METRICS ===== -->
   <div class="metrics" id="metrics"></div>
 
-  <!-- ===== TABS ===== -->
   <div class="tabs">
     <button class="tab active" onclick="setTab('overview')">📊 Overview</button>
     <button class="tab" onclick="setTab('map')">🗺️ Map — Ramsar Sites</button>
     <button class="tab" onclick="setTab('catalog')">📋 Wetland Catalog</button>
     <button class="tab" onclick="setTab('analytics')">📈 Analytics</button>
     <button class="tab" onclick="setTab('ai')">🤖 AI Analysis</button>
+    <button class="tab" onclick="setTab('ngt')" style="border-left: 1px solid var(--border); margin-left: 4px;">⚖️ NGT Action</button>
   </div>
 
-  <!-- ===== OVERVIEW PANEL ===== -->
+  <!-- OVERVIEW -->
   <div class="panel active" id="panel-overview">
     <div class="two-col">
       <div class="card"><div class="chart-label">Health Score Distribution</div><canvas id="distChart" height="180"></canvas></div>
@@ -892,9 +397,17 @@
       <canvas id="trendChart" height="120"></canvas>
     </div>
     <div class="card">
-      <div class="chart-label">🌾 Ramsar Sites Grid — 98 Wetlands (color-coded by risk)</div>
+      <div class="chart-label">🌾 Ramsar Sites Grid — 98 Wetlands (click any square for details)</div>
       <div class="ramsar-grid-wrapper" style="max-height:280px; overflow-y:auto;">
         <div class="ramsar-grid" id="ramsarGrid"></div>
+      </div>
+      <!-- Click info strip -->
+      <div id="grid-info-strip">
+        <span id="grid-strip-dot" style="width:12px;height:12px;border-radius:50%;flex-shrink:0;display:inline-block;"></span>
+        <span class="grid-strip-name" id="grid-strip-name"></span>
+        <span class="grid-strip-meta" id="grid-strip-meta"></span>
+        <span id="grid-strip-badge"></span>
+        <button class="btn-sm" id="grid-strip-ai" style="margin-left:auto;" onclick="">AI Analysis ↗</button>
       </div>
     </div>
     <div class="two-col" style="margin-top:1.25rem;">
@@ -903,30 +416,22 @@
     </div>
   </div>
 
-  <!-- ===== MAP PANEL — map code unchanged ===== -->
+  <!-- MAP -->
   <div class="panel" id="panel-map">
-    <div class="map-container">
-      <div id="indiaMap"></div>
-    </div>
+    <div class="map-container"><div id="indiaMap"></div></div>
     <div class="map-info-panel" id="mapHoverPanel">
       <h4><span>📍</span> Wetland Site Inspector</h4>
       <div class="map-info-details" id="hoverDetails">
-        <div style="grid-column:1/-1; text-align:center; color:var(--text-secondary);">
-          👆 Hover over any marker → detailed insights appear here
-        </div>
+        <div style="grid-column:1/-1; text-align:center; color:var(--text-secondary);">👆 Click any marker → detailed insights appear here</div>
       </div>
     </div>
     <div class="map-legend">
-      <span>🔴 Critical</span>
-      <span>🟠 High Risk</span>
-      <span>🔵 Moderate</span>
-      <span>🟢 Low Risk</span>
-      <span>🩵 Stable</span>
-      <span style="color:var(--text-muted);">📍 98 geolocated Ramsar sites · India-bound map · smooth hover</span>
+      <span>🔴 Critical</span><span>🟠 High Risk</span><span>🔵 Moderate</span><span>🟢 Low Risk</span><span>🩵 Stable</span>
+      <span style="color:var(--text-muted);">📍 98 geolocated Ramsar sites · Click a marker to inspect</span>
     </div>
   </div>
 
-  <!-- ===== CATALOG PANEL ===== -->
+  <!-- CATALOG -->
   <div class="panel" id="panel-catalog">
     <div class="search-row">
       <input type="text" id="searchInp" placeholder="🔍  Search wetland or state…" oninput="filterTable()" style="flex:2;">
@@ -938,32 +443,18 @@
         <option value="Low Risk">Low Risk</option>
         <option value="Stable">Stable</option>
       </select>
-      <select id="filterState" onchange="filterTable()">
-        <option value="">All States</option>
-      </select>
+      <select id="filterState" onchange="filterTable()"><option value="">All States</option></select>
     </div>
     <div class="table-wrap">
       <table id="wetlandTable">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Wetland Name</th>
-            <th>State</th>
-            <th>Area (ha)</th>
-            <th>Health Score</th>
-            <th>Risk Level</th>
-            <th>Biodiversity</th>
-            <th>Trend</th>
-            <th></th>
-          </tr>
-        </thead>
+        <thead><tr><th>#</th><th>Wetland Name</th><th>State</th><th>Area (ha)</th><th>Health Score</th><th>Risk Level</th><th>Biodiversity</th><th>Trend</th><th></th></tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
     <div class="detail-modal" id="detailBox" style="display:none; margin-top:20px;"></div>
   </div>
 
-  <!-- ===== ANALYTICS PANEL ===== -->
+  <!-- ANALYTICS -->
   <div class="panel" id="panel-analytics">
     <div class="card"><canvas id="bioChart" height="200"></canvas></div>
     <div class="two-col" style="margin-top:1.25rem;">
@@ -973,33 +464,192 @@
     <div class="card" style="margin-top:1.25rem;"><canvas id="predChart" height="150"></canvas></div>
   </div>
 
-  <!-- ===== AI PANEL ===== -->
+  <!-- AI ANALYSIS -->
   <div class="panel" id="panel-ai">
     <div class="ai-box">
       <div class="chart-label">🤖 AI Wetland Analyst</div>
       <p>Ask about India's Ramsar wetlands — degradation patterns, specific sites, or conservation strategies.</p>
       <div class="ai-prompt">
-        <input type="text" id="aiInput" placeholder="e.g. Which wetlands in Rajasthan are most at risk?">
-        <button onclick="askAI()">Analyze ↗</button>
+        <input type="text" id="aiInput" placeholder="e.g. Which wetlands in Rajasthan are most at risk?" onkeypress="if(event.key==='Enter') askAI()">
+        <button id="aiBtn" onclick="askAI()">Analyze ↗</button>
       </div>
       <div class="ai-response" id="aiResponse" style="display:none;"></div>
     </div>
     <div style="margin-top:1.25rem; display:flex; gap:8px; flex-wrap:wrap;">
       <button class="btn-sm" onclick="quickAsk('Which wetlands are critically endangered?')">Critical Sites</button>
       <button class="btn-sm" onclick="quickAsk('Main causes of wetland degradation in India')">Degradation Causes</button>
+      <button class="btn-sm" onclick="quickAsk('What conservation policies protect Indian wetlands?')">Conservation Policy</button>
+      <button class="btn-sm" onclick="quickAsk('Compare Chilika Lake and Kolleru Lake ecological status')">Compare Sites</button>
+    </div>
+  </div>
+
+  <!-- NGT ACTION -->
+  <div class="panel" id="panel-ngt">
+    <div class="ngt-hero">
+      <div class="ngt-hero-inner">
+        <div class="ngt-badge"><span class="ngt-badge-dot"></span>Legal Action Module — Active</div>
+        <h2>Bridge AI Data to <em>National Green Tribunal</em> Authority</h2>
+        <p>Your wetland risk scores are evidence. This module converts them into formal NGT filings, pre-filled authority letters, crowdsourced ground-truth reports, and structured action plans.</p>
+        <div class="ngt-hero-stats">
+          <div class="ngt-stat"><span class="ngt-stat-val" id="ngt-critical-count">—</span><span class="ngt-stat-lbl">Critical Sites</span></div>
+          <div class="ngt-stat"><span class="ngt-stat-val" id="ngt-high-count">—</span><span class="ngt-stat-lbl">High Risk Sites</span></div>
+          <div class="ngt-stat"><span class="ngt-stat-val">5</span><span class="ngt-stat-lbl">NGT Benches</span></div>
+          <div class="ngt-stat"><span class="ngt-stat-val">2026</span><span class="ngt-stat-lbl">Report Edition</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ngt-routes">
+      <div class="route-card route-formal">
+        <span class="route-icon">🏛️</span>
+        <span class="route-tag">Route A — Highest Impact</span>
+        <h3>E-File Original Application</h3>
+        <p>File directly with the NGT using your AI risk scores as Technical Evidence. Pro Se filing is allowed — no lawyer required for basic petitions.</p>
+        <a href="https://www.greentribunal.gov.in/" target="_blank" rel="noopener" class="route-action">Open NGT Portal ↗</a>
+      </div>
+      <div class="route-card route-admin">
+        <span class="route-icon">📧</span>
+        <span class="route-tag">Route B — Immediate Action</span>
+        <h3>Public Grievance Email</h3>
+        <p>Send your AI assessment report to the NGT Registry. Use the pre-filled letter generator below.</p>
+        <button class="route-action" onclick="prefillAdminLetter()">Generate Letter ↓</button>
+      </div>
+      <div class="route-card route-media">
+        <span class="route-icon">📰</span>
+        <span class="route-tag">Route C — Suo Motu Trigger</span>
+        <h3>Media &amp; Press Release</h3>
+        <p>NGT takes Suo Motu action from news coverage. A press release citing your AI risk scores can compel the tribunal to act.</p>
+        <button class="route-action" onclick="generatePressRelease()">Draft Press Release ↓</button>
+      </div>
+    </div>
+
+    <div class="ngt-lower">
+      <div class="card">
+        <div class="ngt-section-title">✍️ Authority Letter Generator</div>
+        <div class="ngt-field"><label>Your Name / Organisation</label><input type="text" id="ltr-name" placeholder="e.g. WetlandWatch India / Dr. Priya Sharma"></div>
+        <div class="ngt-field"><label>Target Wetland</label><select id="ltr-wetland"><option value="">— Select from data —</option></select></div>
+        <div class="ngt-field">
+          <label>Send To</label>
+          <select id="ltr-recipient">
+            <option value="ngt-principal">Registrar General, NGT Principal Bench, Delhi</option>
+            <option value="ngt-bhopal">Registrar, NGT Central Zone Bench, Bhopal</option>
+            <option value="ngt-kolkata">Registrar, NGT Eastern Zone Bench, Kolkata</option>
+            <option value="ngt-pune">Registrar, NGT Western Zone Bench, Pune</option>
+            <option value="ngt-chennai">Registrar, NGT Southern Zone Bench, Chennai</option>
+            <option value="dm">District Magistrate (Local Authority)</option>
+          </select>
+        </div>
+        <div class="ngt-field"><label>Your Contact / Organisation Address</label><input type="text" id="ltr-contact" placeholder="email / phone / address"></div>
+        <button class="ngt-btn-primary" onclick="generateLetter()">⚖️ Generate Formal Letter</button>
+        <div id="ngt-letter-preview"></div>
+        <div class="ngt-letter-actions" id="ngt-letter-actions" style="display:none;">
+          <button onclick="copyLetter()">📋 Copy Letter</button>
+          <button onclick="mailLetter()" class="primary-action">📧 Open in Email</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ngt-section-title">📍 Report Ground Truth Issue</div>
+        <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:1rem; line-height:1.6;">Crowdsourced field reports validate AI risk scores for tribunal submissions.</p>
+        <div id="issue-form">
+          <div class="ngt-field"><label>Wetland Site</label><select id="issue-wetland"><option value="">— Select wetland —</option></select></div>
+          <div class="issue-priority-row">
+            <div class="ngt-field"><label>Issue Type</label><select id="issue-type"><option value="encroachment">Land Encroachment</option><option value="pollution">Pollution / Discharge</option><option value="drainage">Illegal Drainage</option><option value="construction">Illegal Construction</option><option value="drying">Water Body Drying Up</option><option value="other">Other</option></select></div>
+            <div class="ngt-field"><label>Severity</label><select id="issue-severity"><option value="critical">Critical — Immediate</option><option value="high">High — Urgent</option><option value="medium">Medium — Monitor</option></select></div>
+          </div>
+          <div class="ngt-field"><label>Description (for tribunal annexure)</label><textarea id="issue-desc" rows="3" placeholder="Describe what you observed — location, extent, date…"></textarea></div>
+          <div class="ngt-field"><label>Your Name (optional)</label><input type="text" id="issue-reporter" placeholder="Anonymous if blank"></div>
+          <button class="ngt-btn-primary" onclick="submitIssue()" style="background: linear-gradient(135deg, #4ade80, #2dd4bf); color: #0d1117;">📤 Submit Report</button>
+        </div>
+        <div class="issue-submitted" id="issue-submitted">
+          <span class="check-icon">✅</span>
+          <h4>Report Logged</h4>
+          <p>Your ground-truth report has been added to the site evidence registry.</p>
+          <button class="btn-sm" onclick="resetIssueForm()" style="margin-top:0.75rem;">Submit Another</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ngt-bottom-row">
+      <div class="card">
+        <div class="ngt-section-title">🗺️ Step-by-Step Action Plan</div>
+        <div class="action-steps">
+          <div class="action-step"><div class="step-num">1</div><div class="step-body"><span class="step-tag">Categorise</span><h4>Identify Top 5 High-Risk Sites</h4><p>Use the Catalog tab → filter by "Critical" to auto-rank.</p><span class="step-complete" id="step1-status" style="cursor:pointer;" onclick="setTab('catalog')">View Catalog →</span></div></div>
+          <div class="action-step"><div class="step-num">2</div><div class="step-body"><span class="step-tag">Draft</span><h4>Generate Formal Letter</h4><p>Use the generator above. Address the Registrar General, NGT Principal Bench, New Delhi.</p></div></div>
+          <div class="action-step"><div class="step-num">3</div><div class="step-body"><span class="step-tag">Link</span><h4>Include QR + Dashboard URL</h4><p>Attach a QR code pointing to this dashboard for live data reference.</p></div></div>
+          <div class="action-step"><div class="step-num">4</div><div class="step-body"><span class="step-tag">Distribute</span><h4>Tag All 5 Zonal Benches</h4><p>Use the Bench Finder below — send region-specific data to each registrar.</p></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ngt-section-title">🏛️ NGT Zonal Bench Finder</div>
+        <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:0.85rem; line-height:1.6;">Select your wetland's state to find the correct bench.</p>
+        <div class="ngt-field"><label>Select State</label><select id="bench-state-select" onchange="findBench(this.value)"><option value="">— Choose a state —</option></select></div>
+        <div id="bench-result" style="display:none; margin-top:0.75rem;">
+          <div class="bench-card" style="border-color:rgba(45,212,191,0.3); background:rgba(45,212,191,0.05);">
+            <div class="bench-name" id="bench-result-name">—</div>
+            <div class="bench-states" id="bench-result-detail">—</div>
+            <div style="margin-top:8px;"><span id="bench-result-email" style="font-size:10px; color:var(--text-accent); font-family:monospace;"></span></div>
+          </div>
+        </div>
+        <div class="ngt-section-title" style="margin-top:1.25rem;">All Benches</div>
+        <div class="bench-grid">
+          <div class="bench-card"><div class="bench-name">🔵 Principal Bench</div><div class="bench-states"><span class="bench-highlight">Delhi</span> · All UTs · Cross-state</div></div>
+          <div class="bench-card"><div class="bench-name">🟠 Central Zone</div><div class="bench-states"><span class="bench-highlight">Bhopal</span> · M.P., U.P., Rajasthan, Uttarakhand</div></div>
+          <div class="bench-card"><div class="bench-name">🟢 Eastern Zone</div><div class="bench-states"><span class="bench-highlight">Kolkata</span> · West Bengal, Odisha, Bihar, NE</div></div>
+          <div class="bench-card"><div class="bench-name">🟣 Western Zone</div><div class="bench-states"><span class="bench-highlight">Pune</span> · Maharashtra, Gujarat, Goa</div></div>
+          <div class="bench-card" style="grid-column:1/-1;"><div class="bench-name">🔴 Southern Zone</div><div class="bench-states"><span class="bench-highlight">Chennai</span> · Tamil Nadu, Andhra Pradesh, Kerala, Karnataka, Telangana</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ngt-section-title">🔌 API Access &amp; Evidence Tips</div>
+        <div class="api-box">
+          <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:4px;">Data Endpoints (Sample)</div>
+          <div class="api-endpoint"><span>GET /api/v1/wetlands</span><button class="copy-btn" onclick="copyEndpoint(this,'GET /api/v1/wetlands')">Copy</button></div>
+          <div class="api-endpoint"><span>GET /api/v1/wetlands/{id}/risk</span><button class="copy-btn" onclick="copyEndpoint(this,'GET /api/v1/wetlands/{id}/risk')">Copy</button></div>
+          <div class="api-endpoint"><span>GET /api/v1/critical?state={state}</span><button class="copy-btn" onclick="copyEndpoint(this,'GET /api/v1/critical?state={state}')">Copy</button></div>
+        </div>
+        <div class="ngt-section-title" style="margin-top:1.25rem;">⚡ Pro Tips</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; font-size:0.78rem; color:var(--text-secondary); line-height:1.6; border-left:2px solid var(--accent-primary);"><strong style="color:var(--text-primary);">Precautionary Principle</strong> — Frame submissions as predictive prevention. NGT's Section 20 mandate explicitly favours precautionary evidence.</div>
+          <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; font-size:0.78rem; color:var(--text-secondary); line-height:1.6; border-left:2px solid #fb923c;"><strong style="color:var(--text-primary);">Subject Line Formula</strong> — "AI-Based Wetland Risk Assessment — {Wetland Name} — Request for Immediate Intervention Under Section 14/15 NGT Act 2010"</div>
+          <div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; font-size:0.78rem; color:var(--text-secondary); line-height:1.6; border-left:2px solid #60a5fa;"><strong style="color:var(--text-primary);">Public Grievance Email</strong> — <span style="color:var(--accent-primary); font-family:monospace; font-size:0.76rem;">publicgrievance-ngt@gov.in</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
 </div><!-- /.dash -->
 
-<!-- Chart.js -->
+<div class="ngt-toast" id="ngt-toast"></div>
+
+<!-- Floating Chat -->
+<div id="chat-logo" onclick="toggleChat()"><span style="font-size:24px;">💬</span></div>
+<div id="chat-window">
+  <div class="chat-header">
+    <div>
+      <h3>🛡️ Eco-Agent Intelligence</h3>
+      <div class="chat-status" id="chat-status">Powered by Groq · llama-3.3-70b</div>
+    </div>
+    <span style="cursor:pointer; color:var(--text-secondary); font-size:18px;" onclick="toggleChat()">✕</span>
+  </div>
+  <div id="messages">
+    <div class="a-msg"><strong>System Online.</strong><br>I am monitoring all 98 Ramsar sites. Ask me about site risks, degradation causes, or conservation strategies.</div>
+  </div>
+  <div class="chat-input-area">
+    <input type="text" id="userInput" placeholder="Ask about site risks..." onkeypress="if(event.key==='Enter' && !event.shiftKey) send()">
+    <button id="sendBtn" onclick="send()">↑</button>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 
 <script>
-// ============================================================
-// COMPLETE RAMSAR DATA — 98 SITES (unchanged from original)
-// ============================================================
-const BASE_WETLANDS = [
+// ================================================================
+// WETLAND DATA
+// ================================================================
+const WETLANDS = [
   {id:1,name:"Chilika Lake",state:"Odisha",area:1165000,type:"Lagoon",health:68,risk:"Moderate",bio:72,trend:"stable",lat:19.7,lon:85.3},
   {id:2,name:"Keoladeo Ghana NP",state:"Rajasthan",area:2873,type:"Freshwater",health:74,risk:"Moderate",bio:81,trend:"improving",lat:27.1,lon:77.5},
   {id:3,name:"Wular Lake",state:"J&K",area:18900,type:"Freshwater",health:41,risk:"High Risk",bio:55,trend:"declining",lat:34.4,lon:74.6},
@@ -1099,18 +749,110 @@ const BASE_WETLANDS = [
   {id:97,name:"Son Gharial",state:"M.P.",area:12800,type:"Riverine",health:52,risk:"Moderate",bio:60,trend:"stable",lat:24.6,lon:81.7},
   {id:98,name:"Nalsarovar",state:"Gujarat",area:12000,type:"Freshwater",health:57,risk:"Moderate",bio:69,trend:"stable",lat:22.9,lon:72.0}
 ];
-const WETLANDS = BASE_WETLANDS;
 
-// ============================================================
-// CHART.JS GLOBAL DARK THEME DEFAULTS
-// Applied before any chart is instantiated
-// ============================================================
-Chart.defaults.color = '#8b949e';          // axis labels → secondary text
-Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';  // grid lines
-Chart.defaults.backgroundColor = 'rgba(45,212,191,0.7)';
+// ================================================================
+// GROQ API — SINGLE SHARED CALL
+// ================================================================
+const BACKEND = 'http://127.0.0.1:5001/chat';
+
+const chatHistory = [];
+
+async function callBackend(message, history = []) {
+  const res = await fetch(BACKEND, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, history })
+  });
+  if (!res.ok) throw new Error(`Server error: ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.reply);
+  return data.reply;
+}
+
+// ================================================================
+// FLOATING CHATBOT
+// ================================================================
+function toggleChat() {
+  const win = document.getElementById('chat-window');
+  win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
+}
+
+async function send() {
+  const input     = document.getElementById('userInput');
+  const container = document.getElementById('messages');
+  const sendBtn   = document.getElementById('sendBtn');
+  const text      = input.value.trim();
+  if (!text) return;
+
+  container.innerHTML += `<div class="u-msg">${text}</div>`;
+  input.value = '';
+  input.disabled = true;
+  sendBtn.disabled = true;
+  container.scrollTop = container.scrollHeight;
+
+  const thinkId = `think-${Date.now()}`;
+  container.innerHTML += `<div class="a-msg thinking" id="${thinkId}">Analysing…</div>`;
+  container.scrollTop = container.scrollHeight;
+
+  chatHistory.push({ role: 'user', content: text });
+
+  try {
+    const reply = await callBackend(text, chatHistory.slice(0, -1));
+    chatHistory.push({ role: 'assistant', content: reply });
+    document.getElementById(thinkId).outerHTML =
+      `<div class="a-msg"><strong>Expert Analysis:</strong><br>${reply}</div>`;
+  } catch (err) {
+    chatHistory.pop();
+    const msg = err.message.includes('429') ? '⏳ Rate limit hit — wait a moment and retry.' : `⚠️ ${err.message}`;
+    document.getElementById(thinkId).outerHTML =
+      `<div class="a-msg error">${msg}</div>`;
+  }
+
+  input.disabled = false;
+  sendBtn.disabled = false;
+  input.focus();
+  container.scrollTop = container.scrollHeight;
+}
+
+// ================================================================
+// AI ANALYSIS TAB
+// ================================================================
+async function askAI() {
+  const q      = document.getElementById('aiInput').value.trim();
+  const box    = document.getElementById('aiResponse');
+  const btn    = document.getElementById('aiBtn');
+  if (!q) return;
+
+  box.style.display = 'block';
+  box.innerHTML = `<span style="opacity:0.5;font-style:italic;">🤖 Analysing…</span>`;
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  try {
+    const reply = await callBackend(q);
+    box.innerHTML = `<strong>🤖 AI Insight:</strong><br>${reply}`;
+  } catch (err) {
+    const msg = err.message.includes('429') ? '⏳ Rate limit hit — wait a moment and retry.' : `⚠️ ${err.message}`;
+    box.innerHTML = `<span style="color:var(--risk-critical);">${msg}</span>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Analyze ↗';
+}
+
+window.quickAsk = function(q) {
+  setTab('ai');
+  document.getElementById('aiInput').value = q;
+  askAI();
+};
+
+// ================================================================
+// CHART DEFAULTS
+// ================================================================
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
 Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
 Chart.defaults.font.size = 12;
-// Plugin defaults
 Chart.defaults.plugins.legend.labels.color = '#8b949e';
 Chart.defaults.plugins.legend.labels.padding = 16;
 Chart.defaults.plugins.tooltip.backgroundColor = '#1c2333';
@@ -1120,69 +862,48 @@ Chart.defaults.plugins.tooltip.titleColor = '#e6edf3';
 Chart.defaults.plugins.tooltip.bodyColor = '#8b949e';
 Chart.defaults.plugins.tooltip.padding = 10;
 
-// ============================================================
-// HELPER UTILITIES (unchanged logic, updated color tokens)
-// ============================================================
+// ================================================================
+// HELPERS
+// ================================================================
 function getRiskBadge(r) {
-  const m = {
-    Critical:   "badge-critical",
-    "High Risk":"badge-high",
-    Moderate:   "badge-moderate",
-    "Low Risk": "badge-low",
-    Stable:     "badge-stable"
-  };
+  const m = { Critical:"badge-critical","High Risk":"badge-high",Moderate:"badge-moderate","Low Risk":"badge-low",Stable:"badge-stable" };
   return `<span class="badge ${m[r]}">${r}</span>`;
 }
 function getHealthColor(h) {
-  // Dark-optimized palette — same semantic meaning, better contrast
-  if (h < 35) return "#f87171";  // red-400
-  if (h < 50) return "#fb923c";  // orange-400
-  if (h < 65) return "#60a5fa";  // blue-400
-  if (h < 78) return "#4ade80";  // green-400
-  return "#34d399";              // emerald-400
+  if (h < 35) return "#f87171";
+  if (h < 50) return "#fb923c";
+  if (h < 65) return "#60a5fa";
+  if (h < 78) return "#4ade80";
+  return "#34d399";
 }
 function getTrendIcon(t) {
-  if (t === "declining")  return "↓";
-  if (t === "improving")  return "↑";
-  return "→";
+  return t === "declining" ? "↓" : t === "improving" ? "↑" : "→";
 }
-function getRiskColorForSquare(r) {
-  switch(r) {
-    case "Critical":  return "#f87171";
-    case "High Risk": return "#fb923c";
-    case "Moderate":  return "#60a5fa";
-    case "Low Risk":  return "#4ade80";
-    case "Stable":    return "#34d399";
-    default:          return "#484f58";
-  }
+function getRiskColor(r) {
+  return { Critical:"#f87171","High Risk":"#fb923c",Moderate:"#60a5fa","Low Risk":"#4ade80",Stable:"#34d399" }[r] || "#484f58";
 }
 
-// ============================================================
-// MAP STATE
-// ============================================================
-let mapInstance = null;
-
-// ============================================================
-// METRICS RENDER
-// ============================================================
+// ================================================================
+// METRICS
+// ================================================================
 function renderMetrics() {
-  const total       = WETLANDS.length;
-  const crit        = WETLANDS.filter(w => w.risk === "Critical").length;
-  const high        = WETLANDS.filter(w => w.risk === "High Risk").length;
-  const avgHealth   = Math.round(WETLANDS.reduce((s, w) => s + w.health, 0) / total);
-  const decl        = WETLANDS.filter(w => w.trend === "declining").length;
+  const total = WETLANDS.length;
+  const crit  = WETLANDS.filter(w => w.risk === "Critical").length;
+  const high  = WETLANDS.filter(w => w.risk === "High Risk").length;
+  const avg   = Math.round(WETLANDS.reduce((s,w) => s + w.health, 0) / total);
+  const decl  = WETLANDS.filter(w => w.trend === "declining").length;
   document.getElementById("metrics").innerHTML = `
     <div class="metric"><div class="metric-label">Total Ramsar Sites</div><div class="metric-val">${total}</div></div>
-    <div class="metric"><div class="metric-label">Avg Health Score</div><div class="metric-val" style="color:${getHealthColor(avgHealth)}">${avgHealth}<span style="font-size:14px;color:var(--text-muted)">/100</span></div></div>
+    <div class="metric"><div class="metric-label">Avg Health Score</div><div class="metric-val" style="color:${getHealthColor(avg)}">${avg}<span style="font-size:14px;color:var(--text-muted)">/100</span></div></div>
     <div class="metric"><div class="metric-label">Critical Sites</div><div class="metric-val" style="color:#f87171">${crit}</div></div>
     <div class="metric"><div class="metric-label">High Risk Sites</div><div class="metric-val" style="color:#fb923c">${high}</div></div>
     <div class="metric"><div class="metric-label">Declining Trend</div><div class="metric-val" style="color:#f87171">${decl}</div></div>
   `;
 }
 
-// ============================================================
-// TABLE RENDER
-// ============================================================
+// ================================================================
+// TABLE
+// ================================================================
 function renderTable(data) {
   document.getElementById("tableBody").innerHTML = data.map(w => `
     <tr>
@@ -1191,9 +912,7 @@ function renderTable(data) {
       <td>${w.state}</td>
       <td>${w.area.toLocaleString()}</td>
       <td>
-        <div class="health-bar" style="border-radius:4px;">
-          <div style="width:${w.health}%; height:5px; background:${getHealthColor(w.health)}; border-radius:4px;"></div>
-        </div>
+        <div class="health-bar"><div style="width:${w.health}%;height:5px;background:${getHealthColor(w.health)};border-radius:4px;"></div></div>
         <span style="font-size:11px;color:${getHealthColor(w.health)}">${w.health}/100</span>
       </td>
       <td>${getRiskBadge(w.risk)}</td>
@@ -1210,7 +929,7 @@ function filterTable() {
   const state = document.getElementById("filterState").value;
   renderTable(WETLANDS.filter(w =>
     (w.name.toLowerCase().includes(q) || w.state.toLowerCase().includes(q)) &&
-    (!risk  || w.risk  === risk) &&
+    (!risk  || w.risk === risk) &&
     (!state || w.state === state)
   ));
 }
@@ -1219,11 +938,7 @@ function populateStateFilter() {
   const states = [...new Set(WETLANDS.map(w => w.state))].sort();
   const sel = document.getElementById("filterState");
   sel.innerHTML = '<option value="">All States</option>';
-  states.forEach(s => {
-    const o = document.createElement("option");
-    o.value = s; o.textContent = s;
-    sel.appendChild(o);
-  });
+  states.forEach(s => { const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o); });
 }
 
 function showDetail(id) {
@@ -1234,13 +949,18 @@ function showDetail(id) {
   box.innerHTML = `
     <h3>${w.name}</h3>
     <p>${w.state} &nbsp;·&nbsp; ${w.type} &nbsp;·&nbsp; Health ${w.health}/100 &nbsp;·&nbsp; ${getRiskBadge(w.risk)}</p>
-    <button class="btn-sm" style="background:var(--accent-primary); color:#0d1117; border:none;" onclick="setTab('ai');document.getElementById('aiInput').value='Analyze ${w.name} conservation';askAI();">AI Analysis ↗</button>
+    <button class="btn-sm" style="background:var(--accent-primary);color:#0d1117;border:none;cursor:pointer;"
+      onclick="setTab('ai');document.getElementById('aiInput').value='Analyse ${w.name} conservation status and threats';askAI();">
+      AI Analysis ↗
+    </button>
   `;
 }
 
-// ============================================================
-// RAMSAR GRID
-// ============================================================
+// ================================================================
+// RAMSAR GRID — CLICK-BASED INFO STRIP
+// ================================================================
+let activeGridSquare = null;
+
 function buildRamsarGrid() {
   const container = document.getElementById("ramsarGrid");
   if (!container) return;
@@ -1248,74 +968,112 @@ function buildRamsarGrid() {
   WETLANDS.forEach(site => {
     const sq = document.createElement("div");
     sq.className = "grid-square";
-    sq.style.backgroundColor = getRiskColorForSquare(site.risk);
-    sq.title = `${site.name} (${site.state})`;
+    sq.style.backgroundColor = getRiskColor(site.risk);
+    sq.dataset.id = site.id;
+    sq.addEventListener('click', () => gridSquareClick(sq, site));
     container.appendChild(sq);
   });
 }
 
-// ============================================================
-// MAP INITIALIZATION
-// Using dark tile layer (CartoDB Dark Matter) to match theme
-// All marker and hover logic is UNCHANGED from the original
-// ============================================================
+function gridSquareClick(sq, site) {
+  // Deselect if clicking same square
+  if (activeGridSquare === sq) {
+    sq.classList.remove('sq-active');
+    activeGridSquare = null;
+    document.getElementById('grid-info-strip').classList.remove('visible');
+    return;
+  }
+  // Deselect previous
+  if (activeGridSquare) activeGridSquare.classList.remove('sq-active');
+  sq.classList.add('sq-active');
+  activeGridSquare = sq;
+
+  // Populate strip
+  const color = getRiskColor(site.risk);
+  document.getElementById('grid-strip-dot').style.backgroundColor = color;
+  document.getElementById('grid-strip-name').textContent = site.name;
+  document.getElementById('grid-strip-meta').textContent =
+    `${site.state} · ${site.type} · Health ${site.health}/100 · Bio ${site.bio}/100 · ${site.trend.toUpperCase()} ${getTrendIcon(site.trend)}`;
+  document.getElementById('grid-strip-badge').innerHTML = getRiskBadge(site.risk);
+  document.getElementById('grid-strip-ai').onclick = () => {
+    setTab('ai');
+    document.getElementById('aiInput').value = `Analyse ${site.name} conservation status and threats`;
+    askAI();
+  };
+  document.getElementById('grid-info-strip').classList.add('visible');
+}
+
+// ================================================================
+// MAP — CLICK-BASED INSPECTOR
+// ================================================================
+let mapInstance = null;
+let activeMapMarker = null;
+
 function initMap() {
   if (mapInstance) return;
-  const mapContainer = document.getElementById('indiaMap');
-  if (!mapContainer) return;
-
   mapInstance = L.map('indiaMap').setView([23.5, 79.5], 5);
-
-  // Dark map tile — matches the dark theme
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &amp; CartoDB',
-    subdomains: 'abcd',
-    maxZoom: 9
+    attribution: '&copy; OSM &amp; CartoDB', subdomains: 'abcd', maxZoom: 9
   }).addTo(mapInstance);
-
-  // Strict India bounds — unchanged from original
   const indiaBounds = L.latLngBounds(L.latLng(5.5, 67.0), L.latLng(37.2, 98.5));
   mapInstance.setMaxBounds(indiaBounds);
-  mapInstance.on('drag', function() {
-    mapInstance.panInsideBounds(indiaBounds, { animate: false });
-  });
+  mapInstance.on('drag', () => mapInstance.panInsideBounds(indiaBounds, { animate: false }));
 
   const hoverPanel = document.getElementById("hoverDetails");
 
+  // Click on the map background resets the inspector
+  mapInstance.on('click', () => {
+    if (activeMapMarker) {
+      activeMapMarker._icon && activeMapMarker._icon.querySelector('div') &&
+        activeMapMarker._icon.classList.remove('selected');
+      activeMapMarker = null;
+    }
+    hoverPanel.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">👆 Click any marker → detailed insights appear here</div>`;
+  });
+
   WETLANDS.forEach(site => {
     if (!site.lat || !site.lon) return;
-    const markerColor = getRiskColorForSquare(site.risk);
-    const customIcon = L.divIcon({
+    const color = getRiskColor(site.risk);
+    const icon = L.divIcon({
       className: 'custom-marker',
-      html: `<div style="background-color:${markerColor}; width:13px; height:13px; border-radius:50%; border:2px solid rgba(255,255,255,0.7); box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`,
-      iconSize: [13, 13],
-      popupAnchor: [0, -8]
+      html: `<div style="background:${color};width:13px;height:13px;border-radius:50%;border:2px solid rgba(255,255,255,0.7);box-shadow:0 2px 8px rgba(0,0,0,0.5);"></div>`,
+      iconSize: [13,13], popupAnchor: [0,-8]
     });
+    const marker = L.marker([site.lat, site.lon], { icon }).addTo(mapInstance);
+    marker.bindTooltip(site.name, { sticky: false, direction: 'top' });
 
-    const marker = L.marker([site.lat, site.lon], { icon: customIcon }).addTo(mapInstance);
-    marker.bindTooltip(`${site.name}`, { sticky: true, direction: 'top' });
+    // ── CLICK replaces mouseover ──
+    marker.on('click', (e) => {
+      L.DomEvent.stopPropagation(e); // don't bubble to map click
 
-    marker.on('mouseover', function() {
-      const riskColorMap = {
-        "Critical": "#f87171",
-        "High Risk":"#fb923c",
-        "Moderate": "#60a5fa",
-        "Low Risk": "#4ade80",
-        "Stable":   "#34d399"
-      };
+      // Deselect previously active marker
+      if (activeMapMarker && activeMapMarker !== marker) {
+        activeMapMarker._icon && activeMapMarker._icon.classList.remove('selected');
+      }
+
+      // Toggle if clicking the same marker again
+      if (activeMapMarker === marker) {
+        marker._icon && marker._icon.classList.remove('selected');
+        activeMapMarker = null;
+        hoverPanel.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">👆 Click any marker → detailed insights appear here</div>`;
+        return;
+      }
+
+      marker._icon && marker._icon.classList.add('selected');
+      activeMapMarker = marker;
+
       hoverPanel.innerHTML = `
         <div><span class="info-label">Wetland</span><div class="info-value">${site.name}</div></div>
         <div><span class="info-label">State</span><div class="info-value">${site.state}</div></div>
         <div><span class="info-label">Health Score</span><div class="info-value" style="color:${getHealthColor(site.health)}">${site.health}/100</div></div>
-        <div><span class="info-label">Risk Level</span><div class="info-value"><span class="risk-badge-map" style="background:${riskColorMap[site.risk]}20; color:${riskColorMap[site.risk]}; border:1px solid ${riskColorMap[site.risk]}40">${site.risk}</span></div></div>
+        <div><span class="info-label">Risk Level</span><div class="info-value"><span class="risk-badge-map" style="background:${color}20;color:${color};border:1px solid ${color}40">${site.risk}</span></div></div>
         <div><span class="info-label">Biodiversity</span><div class="info-value">${site.bio}/100</div></div>
         <div><span class="info-label">Area (ha)</span><div class="info-value">${site.area.toLocaleString()}</div></div>
         <div><span class="info-label">Trend</span><div class="info-value">${site.trend.toUpperCase()} ${getTrendIcon(site.trend)}</div></div>
       `;
-    });
 
-    marker.on('mouseout', function() {
-      hoverPanel.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-secondary);">👆 Hover over any marker → detailed insights appear here</div>`;
+      // Scroll inspector into view on mobile
+      document.getElementById('mapHoverPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   });
 
@@ -1323,208 +1081,233 @@ function initMap() {
 }
 
 window.addEventListener('resize', () => {
-  if (mapInstance && document.getElementById('panel-map').classList.contains('active')) {
-    mapInstance.invalidateSize();
-  }
+  if (mapInstance && document.getElementById('panel-map').classList.contains('active')) mapInstance.invalidateSize();
 });
 
-// ============================================================
-// CHARTS — dark-themed versions
-// ============================================================
+// ================================================================
+// CHARTS
+// ================================================================
 function renderCharts() {
-  // Shared dark scales config
-  const darkScales = {
+  const sc = {
     x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
     y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } }
   };
-
-  // Risk Distribution Doughnut
-  new Chart(document.getElementById("distChart"), {
-    type: "doughnut",
-    data: {
-      labels: ["Critical","High Risk","Moderate","Low Risk","Stable"],
-      datasets: [{
-        data: [
-          WETLANDS.filter(w=>w.risk==="Critical").length,
-          WETLANDS.filter(w=>w.risk==="High Risk").length,
-          WETLANDS.filter(w=>w.risk==="Moderate").length,
-          WETLANDS.filter(w=>w.risk==="Low Risk").length,
-          WETLANDS.filter(w=>w.risk==="Stable").length
-        ],
-        backgroundColor: ["#f87171","#fb923c","#60a5fa","#4ade80","#34d399"],
-        borderWidth: 0,
-        hoverOffset: 6
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: true,
-      cutout: '65%',
-      plugins: { legend: { position: "bottom" } }
-    }
-  });
-
-  // State Degradation Bar
-  new Chart(document.getElementById("stateChart"), {
-    type: "bar",
-    data: {
-      labels: ["Rajasthan","Punjab","U.P.","Haryana","Bihar"],
-      datasets: [{
-        label: "Vulnerability Index",
-        data: [67,61,58,53,51],
-        backgroundColor: "rgba(96,165,250,0.7)",
-        borderRadius: 4,
-        borderWidth: 0
-      }]
-    },
-    options: { responsive: true, scales: darkScales }
-  });
-
-  // Ecological Stress Trend
-  new Chart(document.getElementById("trendChart"), {
-    type: "line",
-    data: {
-      labels: ["2019","2020","2021","2022","2023","2024"],
-      datasets: [{
-        label: "Ecological Stress",
-        data: [38,41,44,46,51,55],
-        borderColor: "#f87171",
-        backgroundColor: "rgba(248,113,113,0.08)",
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: "#f87171",
-        pointRadius: 4
-      }]
-    },
-    options: { responsive: true, scales: darkScales }
-  });
-
-  // Biodiversity by Wetland Type
-  new Chart(document.getElementById("bioChart"), {
-    type: "bar",
-    data: {
-      labels: ["Lakes","Floodplains","Coastal"],
-      datasets: [{
-        label: "Biodiversity Index",
-        data: [62,71,58],
-        backgroundColor: ["rgba(45,212,191,0.7)","rgba(56,189,248,0.7)","rgba(129,140,248,0.7)"],
-        borderRadius: 4, borderWidth: 0
-      }]
-    },
-    options: { responsive: true, scales: darkScales }
-  });
-
-  // Water Spread Loss
-  new Chart(document.getElementById("waterChart"), {
-    type: "bar",
-    data: {
-      labels: ["1990s","2000s","2010s","2020s"],
-      datasets: [{
-        label: "Water Spread Loss (%)",
-        data: [18,29,41,55],
-        backgroundColor: "rgba(251,146,60,0.7)",
-        borderRadius: 4, borderWidth: 0
-      }]
-    },
-    options: { responsive: true, scales: darkScales }
-  });
-
-  // Pollution Sources Doughnut
-  new Chart(document.getElementById("pollChart"), {
-    type: "doughnut",
-    data: {
-      labels: ["Agricultural","Industrial","Sewage"],
-      datasets: [{
-        data: [38,27,22],
-        backgroundColor: ["rgba(251,146,60,0.8)","rgba(248,113,113,0.8)","rgba(96,165,250,0.8)"],
-        borderWidth: 0, hoverOffset: 6
-      }]
-    },
-    options: {
-      responsive: true, cutout: '60%',
-      plugins: { legend: { position: "bottom" } }
-    }
-  });
-
-  // Predictive Health Trend
-  new Chart(document.getElementById("predChart"), {
-    type: "line",
-    data: {
-      labels: ["2024","2026","2028","2030"],
-      datasets: [{
-        label: "Predicted Health Trend",
-        data: [57,53,48,42],
-        borderColor: "#fb923c",
-        backgroundColor: "rgba(251,146,60,0.08)",
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: "#fb923c",
-        pointRadius: 4,
-        borderDash: [6,3]
-      }]
-    },
-    options: { responsive: true, scales: darkScales }
-  });
+  new Chart(document.getElementById("distChart"), { type:"doughnut", data:{ labels:["Critical","High Risk","Moderate","Low Risk","Stable"], datasets:[{ data:[WETLANDS.filter(w=>w.risk==="Critical").length,WETLANDS.filter(w=>w.risk==="High Risk").length,WETLANDS.filter(w=>w.risk==="Moderate").length,WETLANDS.filter(w=>w.risk==="Low Risk").length,WETLANDS.filter(w=>w.risk==="Stable").length], backgroundColor:["#f87171","#fb923c","#60a5fa","#4ade80","#34d399"], borderWidth:0, hoverOffset:6 }] }, options:{ responsive:true, cutout:'65%', plugins:{ legend:{ position:"bottom" } } } });
+  new Chart(document.getElementById("stateChart"), { type:"bar", data:{ labels:["Rajasthan","Punjab","U.P.","Haryana","Bihar"], datasets:[{ label:"Vulnerability Index", data:[67,61,58,53,51], backgroundColor:"rgba(96,165,250,0.7)", borderRadius:4, borderWidth:0 }] }, options:{ responsive:true, scales:sc } });
+  new Chart(document.getElementById("trendChart"), { type:"line", data:{ labels:["2019","2020","2021","2022","2023","2024"], datasets:[{ label:"Ecological Stress", data:[38,41,44,46,51,55], borderColor:"#f87171", backgroundColor:"rgba(248,113,113,0.08)", fill:true, tension:0.4, pointBackgroundColor:"#f87171", pointRadius:4 }] }, options:{ responsive:true, scales:sc } });
+  new Chart(document.getElementById("bioChart"), { type:"bar", data:{ labels:["Lakes","Floodplains","Coastal"], datasets:[{ label:"Biodiversity Index", data:[62,71,58], backgroundColor:["rgba(45,212,191,0.7)","rgba(56,189,248,0.7)","rgba(129,140,248,0.7)"], borderRadius:4, borderWidth:0 }] }, options:{ responsive:true, scales:sc } });
+  new Chart(document.getElementById("waterChart"), { type:"bar", data:{ labels:["1990s","2000s","2010s","2020s"], datasets:[{ label:"Water Spread Loss (%)", data:[18,29,41,55], backgroundColor:"rgba(251,146,60,0.7)", borderRadius:4, borderWidth:0 }] }, options:{ responsive:true, scales:sc } });
+  new Chart(document.getElementById("pollChart"), { type:"doughnut", data:{ labels:["Agricultural","Industrial","Sewage"], datasets:[{ data:[38,27,22], backgroundColor:["rgba(251,146,60,0.8)","rgba(248,113,113,0.8)","rgba(96,165,250,0.8)"], borderWidth:0, hoverOffset:6 }] }, options:{ responsive:true, cutout:'60%', plugins:{ legend:{ position:"bottom" } } } });
+  new Chart(document.getElementById("predChart"), { type:"line", data:{ labels:["2024","2026","2028","2030"], datasets:[{ label:"Predicted Health Trend", data:[57,53,48,42], borderColor:"#fb923c", backgroundColor:"rgba(251,146,60,0.08)", fill:true, tension:0.4, pointBackgroundColor:"#fb923c", pointRadius:4, borderDash:[6,3] }] }, options:{ responsive:true, scales:sc } });
 }
 
-// ============================================================
-// STRESSORS & CRITICAL LISTS
-// ============================================================
 function renderStressors() {
-  const factors = [
-    { name: "Water diversion",  val: 82 },
-    { name: "Agri runoff",      val: 75 },
-    { name: "Urban encroach",   val: 68 }
-  ];
-  document.getElementById("stressors").innerHTML = factors.map(f =>
-    `<div><strong>${f.name}</strong> <span style="color:#fb923c;font-weight:600;">${f.val}%</span> <span style="color:var(--text-muted)">impact</span></div>`
-  ).join('');
+  document.getElementById("stressors").innerHTML = [
+    { name:"Water diversion", val:82 },
+    { name:"Agri runoff",     val:75 },
+    { name:"Urban encroach",  val:68 }
+  ].map(f => `<div><strong>${f.name}</strong> <span style="color:#fb923c;font-weight:600;">${f.val}%</span> <span style="color:var(--text-muted)">impact</span></div>`).join('');
 }
 
 function renderCritical() {
-  const crit = WETLANDS.filter(w => w.risk === "Critical" || w.risk === "High Risk").slice(0, 6);
-  document.getElementById("critical-list").innerHTML = crit.map(w =>
-    `<div>⚠️ <strong>${w.name}</strong> <span style="color:var(--text-muted)">(${w.state})</span> <span style="color:${getHealthColor(w.health)}">H:${w.health}</span></div>`
-  ).join('');
+  document.getElementById("critical-list").innerHTML = WETLANDS
+    .filter(w => w.risk === "Critical" || w.risk === "High Risk")
+    .slice(0, 6)
+    .map(w => `<div>⚠️ <strong>${w.name}</strong> <span style="color:var(--text-muted)">(${w.state})</span> <span style="color:${getHealthColor(w.health)}">H:${w.health}</span></div>`)
+    .join('');
 }
 
-// ============================================================
-// TAB SWITCHER
-// ============================================================
+// ================================================================
+// TABS
+// ================================================================
 window.setTab = function(tabId) {
   document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
   document.querySelectorAll(".panel").forEach(el => el.classList.remove("active"));
   document.querySelector(`[onclick="setTab('${tabId}')"]`).classList.add("active");
   document.getElementById(`panel-${tabId}`).classList.add("active");
+  if (tabId === "map") { if (!mapInstance) initMap(); else setTimeout(() => mapInstance.invalidateSize(), 80); }
+  if (tabId === "catalog" && !document.getElementById("tableBody").innerHTML) { renderTable(WETLANDS); populateStateFilter(); }
+};
 
-  if (tabId === "map") {
-    if (!mapInstance) initMap();
-    else setTimeout(() => mapInstance.invalidateSize(), 80);
+window.filterTable  = filterTable;
+window.showDetail   = showDetail;
+
+// ================================================================
+// NGT MODULE
+// ================================================================
+const NGT_BENCHES = {
+  "Odisha":         { name:"Eastern Zone Bench — Kolkata",  email:"ngt-kolkata@gov.in",         note:"Covers Odisha, West Bengal, Bihar, NE States" },
+  "Rajasthan":      { name:"Central Zone Bench — Bhopal",   email:"ngt-bhopal@gov.in",          note:"Covers Rajasthan, M.P., U.P., Uttarakhand" },
+  "J&K":            { name:"Principal Bench — New Delhi",   email:"publicgrievance-ngt@gov.in", note:"J&K and Union Territories default to Principal Bench" },
+  "Punjab":         { name:"Principal Bench — New Delhi",   email:"publicgrievance-ngt@gov.in", note:"Punjab / Haryana / Delhi / Chandigarh → Principal Bench" },
+  "Manipur":        { name:"Eastern Zone Bench — Kolkata",  email:"ngt-kolkata@gov.in",         note:"North-East India → Eastern Zone" },
+  "Assam":          { name:"Eastern Zone Bench — Kolkata",  email:"ngt-kolkata@gov.in",         note:"Assam and NE States → Eastern Zone" },
+  "H.P.":           { name:"Principal Bench — New Delhi",   email:"publicgrievance-ngt@gov.in", note:"Himachal Pradesh → Principal Bench" },
+  "Uttarakhand":    { name:"Central Zone Bench — Bhopal",   email:"ngt-bhopal@gov.in",          note:"Uttarakhand → Central Zone" },
+  "U.P.":           { name:"Central Zone Bench — Bhopal",   email:"ngt-bhopal@gov.in",          note:"Uttar Pradesh → Central Zone" },
+  "Gujarat":        { name:"Western Zone Bench — Pune",     email:"ngt-pune@gov.in",            note:"Gujarat → Western Zone" },
+  "Haryana":        { name:"Principal Bench — New Delhi",   email:"publicgrievance-ngt@gov.in", note:"Haryana → Principal Bench" },
+  "Bihar":          { name:"Eastern Zone Bench — Kolkata",  email:"ngt-kolkata@gov.in",         note:"Bihar → Eastern Zone" },
+  "Tamil Nadu":     { name:"Southern Zone Bench — Chennai", email:"ngt-chennai@gov.in",         note:"Tamil Nadu → Southern Zone" },
+  "Kerala":         { name:"Southern Zone Bench — Chennai", email:"ngt-chennai@gov.in",         note:"Kerala → Southern Zone" },
+  "Ladakh":         { name:"Principal Bench — New Delhi",   email:"publicgrievance-ngt@gov.in", note:"Ladakh UT → Principal Bench" },
+  "Goa":            { name:"Western Zone Bench — Pune",     email:"ngt-pune@gov.in",            note:"Goa → Western Zone" },
+  "M.P.":           { name:"Central Zone Bench — Bhopal",   email:"ngt-bhopal@gov.in",          note:"Madhya Pradesh → Central Zone" },
+  "Karnataka":      { name:"Southern Zone Bench — Chennai", email:"ngt-chennai@gov.in",         note:"Karnataka → Southern Zone" },
+  "Maharashtra":    { name:"Western Zone Bench — Pune",     email:"ngt-pune@gov.in",            note:"Maharashtra → Western Zone" },
+  "Andhra Pradesh": { name:"Southern Zone Bench — Chennai", email:"ngt-chennai@gov.in",         note:"Andhra Pradesh → Southern Zone" }
+};
+
+let generatedLetterText = "";
+
+function ngtInit() {
+  document.getElementById('ngt-critical-count').textContent = WETLANDS.filter(w => w.risk === "Critical").length;
+  document.getElementById('ngt-high-count').textContent     = WETLANDS.filter(w => w.risk === "High Risk").length;
+
+  const sorted = [...WETLANDS].sort((a,b) => {
+    const ord = { Critical:0,"High Risk":1,Moderate:2,"Low Risk":3,Stable:4 };
+    return (ord[a.risk]??5) - (ord[b.risk]??5);
+  });
+
+  ['ltr-wetland','issue-wetland'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sorted.forEach(w => {
+      const o = document.createElement('option');
+      o.value = w.id;
+      o.textContent = `${w.risk==='Critical'?'🔴':w.risk==='High Risk'?'🟠':'🔵'} ${w.name} (${w.state})`;
+      sel.appendChild(o);
+    });
+  });
+
+  const bSel = document.getElementById('bench-state-select');
+  if (bSel) {
+    [...new Set(WETLANDS.map(w => w.state))].sort().forEach(s => {
+      const o = document.createElement('option'); o.value = s; o.textContent = s; bSel.appendChild(o);
+    });
   }
-  if (tabId === "catalog" && document.getElementById("tableBody").innerHTML === "") {
-    renderTable(WETLANDS);
-    populateStateFilter();
-  }
+}
+
+function getRecipientDetails(val) {
+  return {
+    'ngt-principal': { name:'The Registrar General\nNational Green Tribunal\nPrincipal Bench, New Delhi — 110003', email:'publicgrievance-ngt@gov.in' },
+    'ngt-bhopal':    { name:'The Registrar\nNational Green Tribunal\nCentral Zone Bench, Bhopal — 462001',       email:'ngt-bhopal@gov.in' },
+    'ngt-kolkata':   { name:'The Registrar\nNational Green Tribunal\nEastern Zone Bench, Kolkata — 700001',      email:'ngt-kolkata@gov.in' },
+    'ngt-pune':      { name:'The Registrar\nNational Green Tribunal\nWestern Zone Bench, Pune — 411001',         email:'ngt-pune@gov.in' },
+    'ngt-chennai':   { name:'The Registrar\nNational Green Tribunal\nSouthern Zone Bench, Chennai — 600002',     email:'ngt-chennai@gov.in' },
+    'dm':            { name:'The District Magistrate\n[Your District]\n[Your State]',                            email:'[dm-email@nic.in]' }
+  }[val] || { name:'The Registrar General\nNational Green Tribunal\nPrincipal Bench, New Delhi — 110003', email:'publicgrievance-ngt@gov.in' };
+}
+
+window.generateLetter = function() {
+  const nameVal    = document.getElementById('ltr-name').value.trim()    || '[Your Name / Organisation]';
+  const contactVal = document.getElementById('ltr-contact').value.trim() || '[Your Contact Details]';
+  const wetlandId  = parseInt(document.getElementById('ltr-wetland').value);
+  const recipient  = document.getElementById('ltr-recipient').value;
+  const w          = WETLANDS.find(x => x.id === wetlandId);
+  const recip      = getRecipientDetails(recipient);
+  const today      = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+
+  const wetlandBlock = w
+    ? `${w.name}, ${w.state} (Ramsar Site #${w.id})\n  Type              : ${w.type}\n  AI Health Score   : ${w.health}/100 — ${w.risk}\n  Biodiversity Index: ${w.bio}/100\n  Ecological Trend  : ${w.trend.toUpperCase()}\n  Area              : ${w.area.toLocaleString()} hectares`
+    : '[Please select a wetland]';
+
+  generatedLetterText = `${nameVal}\n${contactVal}\n\nDate: ${today}\n\nTo,\n${recip.name}\n\nSubject: Submission of AI-Based Wetland Risk Assessment Report — ${w ? w.name : 'Multiple Sites'} — Request for Immediate Intervention Under Section 14/15, National Green Tribunal Act, 2010\n\nRespected Sir/Madam,\n\nI/We, ${nameVal}, hereby submit this formal communication before your Hon'ble Tribunal in the interest of environmental conservation and public trust, as mandated under the National Green Tribunal Act, 2010.\n\nBACKGROUND:\nOur organisation has developed and deployed an AI-powered ecological monitoring system covering all 98 Ramsar-designated wetlands across India. The system integrates remote sensing indices, biodiversity scores, and ecological stress data to produce scientifically grounded risk assessments. The live dashboard and methodology are accessible at:\n\n  https://wetlandrisk.in/report-2026\n\nSITE UNDER CONCERN:\n${wetlandBlock}\n\nLEGAL BASIS:\nThis submission invokes the Precautionary Principle as enshrined in Section 20 of the NGT Act, 2010, and Article 21 of the Constitution of India (Right to a Clean Environment).\n\nPRAYER:\nWe respectfully request that this Hon'ble Tribunal:\n  (a) Take cognizance of the AI-based risk assessment as Technical Evidence (Annexure A);\n  (b) Issue directions to the concerned State Pollution Control Board and Forest Department;\n  (c) Order an independent ground-truth survey at ${w ? w.name : 'the identified sites'};\n  (d) Pass any further orders as deemed appropriate in the interest of ecological justice.\n\nRespectfully submitted,\n\n${nameVal}\n${contactVal}\n\n---\n[Annexure A: AI Risk Assessment Data — ${w ? w.name : 'Selected Sites'}]\n[Annexure B: Live Dashboard → https://wetlandrisk.in/report-2026]\n[Annexure C: Ground Truth Field Reports — Available on request]`;
+
+  const preview = document.getElementById('ngt-letter-preview');
+  const actions = document.getElementById('ngt-letter-actions');
+  preview.style.display = 'block';
+  preview.textContent = generatedLetterText;
+  actions.style.display = 'flex';
+  preview.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  showToast('✅ Letter generated — ready to copy or email');
 };
 
-// ============================================================
-// AI FUNCTIONS
-// ============================================================
-window.askAI = function() {
-  const q = document.getElementById("aiInput").value;
-  const box = document.getElementById("aiResponse");
-  box.style.display = "block";
-  box.innerHTML = `<strong>🤖 AI Insight:</strong> ${q || "India's wetlands"}: Prioritize restoration in Punjab, Rajasthan &amp; Haryana. High-risk: Kolleru, Deepor Beel, Basai. Integrated water management crucial.`;
+window.copyLetter = function() {
+  if (!generatedLetterText) return;
+  navigator.clipboard.writeText(generatedLetterText).then(() => showToast('📋 Letter copied to clipboard'));
 };
 
-window.quickAsk = function(q) {
-  setTab("ai");
-  document.getElementById("aiInput").value = q;
-  askAI();
+window.mailLetter = function() {
+  const recip     = getRecipientDetails(document.getElementById('ltr-recipient').value);
+  const wetlandId = parseInt(document.getElementById('ltr-wetland').value);
+  const w         = WETLANDS.find(x => x.id === wetlandId);
+  const subject   = encodeURIComponent(`AI-Based Wetland Risk Assessment — ${w ? w.name : 'Multiple Sites'} — NGT Section 14/15`);
+  const body      = encodeURIComponent(generatedLetterText);
+  window.location.href = `mailto:${recip.email}?subject=${subject}&body=${body}`;
 };
 
-// ============================================================
-// INITIALISE ON LOAD
-// ============================================================
+window.prefillAdminLetter = function() {
+  setTab('ngt');
+  setTimeout(() => {
+    document.getElementById('ltr-recipient').value = 'ngt-principal';
+    const crit = WETLANDS.find(w => w.risk === 'Critical');
+    if (crit) document.getElementById('ltr-wetland').value = crit.id;
+    document.getElementById('ltr-wetland').scrollIntoView({ behavior:'smooth', block:'center' });
+    showToast('📧 Pre-filled for admin route — adjust details and generate');
+  }, 300);
+};
+
+window.generatePressRelease = function() {
+  setTab('ngt');
+  setTimeout(() => {
+    const crit  = WETLANDS.filter(w => w.risk === 'Critical');
+    const high  = WETLANDS.filter(w => w.risk === 'High Risk');
+    const today = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+
+    generatedLetterText = `PRESS RELEASE — FOR IMMEDIATE RELEASE\n${today}\n\nAI SYSTEM FLAGS ${crit.length} RAMSAR WETLANDS AT CRITICAL RISK IN INDIA;\nCALLS ON NATIONAL GREEN TRIBUNAL FOR EMERGENCY INTERVENTION\n\n[City] — An AI-powered ecological monitoring platform tracking all 98 Ramsar-designated wetlands in India has flagged ${crit.length} sites as critically endangered and ${high.length} as high-risk, in findings released today.\n\nCritical sites include: ${crit.slice(0,3).map(w=>`${w.name} (${w.state})`).join(', ')}${crit.length>3?`, and ${crit.length-3} others`:''}.\n\nThe system found that over ${WETLANDS.filter(w=>w.trend==='declining').length} of India's 98 Ramsar sites are on a declining ecological trajectory as of 2026.\n\nThe team has filed a formal submission with the National Green Tribunal under Section 14 of the NGT Act, 2010, requesting an independent survey and emergency protection orders.\n\nLive data: https://wetlandrisk.in/report-2026\n\n###\n\nFor media inquiries: [contact@yourorganisation.in]`;
+
+    const preview = document.getElementById('ngt-letter-preview');
+    const actions = document.getElementById('ngt-letter-actions');
+    preview.style.display = 'block';
+    preview.textContent = generatedLetterText;
+    actions.style.display = 'flex';
+    preview.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    showToast('📰 Press release drafted — copy and distribute');
+  }, 200);
+};
+
+window.submitIssue = function() {
+  const wetlandId = document.getElementById('issue-wetland').value;
+  const desc      = document.getElementById('issue-desc').value.trim();
+  if (!wetlandId || !desc) { showToast('⚠️ Please select a wetland and add a description'); return; }
+  document.getElementById('issue-form').style.display = 'none';
+  document.getElementById('issue-submitted').style.display = 'block';
+};
+
+window.resetIssueForm = function() {
+  document.getElementById('issue-form').style.display = 'block';
+  document.getElementById('issue-submitted').style.display = 'none';
+  document.getElementById('issue-wetland').value = '';
+  document.getElementById('issue-desc').value = '';
+};
+
+window.findBench = function(state) {
+  const bench  = NGT_BENCHES[state];
+  const result = document.getElementById('bench-result');
+  if (!bench || !state) { result.style.display = 'none'; return; }
+  document.getElementById('bench-result-name').textContent   = bench.name;
+  document.getElementById('bench-result-detail').textContent = bench.note;
+  document.getElementById('bench-result-email').textContent  = bench.email;
+  result.style.display = 'block';
+};
+
+window.copyEndpoint = function(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+  });
+};
+
+function showToast(msg) {
+  const t = document.getElementById('ngt-toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ================================================================
+// INIT
+// ================================================================
 window.onload = () => {
   renderMetrics();
   renderStressors();
@@ -1533,66 +1316,8 @@ window.onload = () => {
   populateStateFilter();
   renderCharts();
   buildRamsarGrid();
-  // Map lazy-loads only when user clicks the Map tab
+  ngtInit();
 };
-
-window.showDetail  = showDetail;
-window.filterTable = filterTable;
-    function toggleChat() {
-    const win = document.getElementById('chat-window');
-    win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
-}
-async function send() {
-    const input = document.getElementById('userInput');
-    const container = document.getElementById('messages');
-    const text = input.value.trim();
-    if(!text) return;
-
-    // 1. Show the user's message in the chat window
-    container.innerHTML += `<div class="u-msg">${text}</div>`;
-    input.value = "";
-    container.scrollTop = container.scrollHeight;
-
-    try {
-        // --- PASTE THE FETCH CODE RIGHT HERE ---
-        const response = await fetch('http://127.0.0.1:5000/chat', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ message: text })
-        });
-        // ---------------------------------------
-
-        const data = await response.json();
-
-        // 2. Show the AI's response
-        container.innerHTML += `<div class="a-msg"><strong>Expert Analysis:</strong><br>${data.reply}</div>`;
-        container.scrollTop = container.scrollHeight;
-
-    } catch (err) {
-        // This runs if app.py is not running or there is a connection error
-        container.innerHTML += `<div style="color:var(--risk-critical); font-size:11px; text-align:center;">Backend Connection Lost.</div>`;
-    }
-}
 </script>
-<div id="chat-logo" onclick="toggleChat()">
-        <i class="ti ti-message-chatbot" style="font-size: 28px;"></i>
-    </div>
-
-    <div id="chat-window">
-        <div class="chat-header">
-            <h3><i class="ti ti-shield-check"></i> Eco-Agent Intelligence</h3>
-            <i class="ti ti-x" style="cursor:pointer; color: var(--text-secondary);" onclick="toggleChat()"></i>
-        </div>
-        <div id="messages">
-            <div class="a-msg">
-                <strong>System Online.</strong><br>
-                I am monitoring the 75 Ramsar sites. How can I assist with your telemetry analysis?
-            </div>
-        </div>
-        <div class="chat-input-area">
-            <input type="text" id="userInput" placeholder="Ask about site risks..." onkeypress="if(event.key==='Enter') send()">
-            <button onclick="send()"><i class="ti ti-send"></i></button>
-        </div>
-    </div>
 </body>
 </html>

@@ -1,125 +1,128 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from google import genai
 from dotenv import load_dotenv
 import os
 
-# Load .env file
 load_dotenv()
 
-# ============================================================
-# APP SETUP
-# ============================================================
-app = Flask(__name__)
-CORS(app, resources={r"/chat": {"origins": "*"}})
+# ── APP ──────────────────────────────────────────────────────
+app = Flask(__name__, static_folder=".")
+CORS(app)
 
-# ============================================================
-# GEMINI CLIENT — reads GEMINI_API_KEY from .env automatically
-# ============================================================
-api_key = os.environ.get("GEMINI_API_KEY")
+# ── GROQ CLIENT ───────────────────────────────────────────────
+api_key = os.environ.get("GROQ_API_KEY")
 if not api_key:
     raise ValueError(
-        "\n\n❌  GEMINI_API_KEY not found.\n"
-        "    Make sure your .env file contains:\n"
-        "    GEMINI_API_KEY=your_key_here\n"
+        "❌  GROQ_API_KEY not found in .env\n"
+        "    1. Get a free key at https://console.groq.com\n"
+        "    2. Add to .env:  GROQ_API_KEY=your_key_here"
     )
 
-client = genai.Client(api_key=api_key)
+try:
+    from groq import Groq
+    client = Groq(api_key=api_key)
+    print("   ✅  Groq client ready")
+except ImportError:
+    raise ImportError("❌  Run:  pip install groq")
 
-# ============================================================
-# SYSTEM CONTEXT
-# ============================================================
-SYSTEM_CONTEXT = """
-You are the WetlandAI Specialist — an ecological intelligence agent embedded in India's
-Ramsar Wetland Monitoring Dashboard. You have deep expertise in wetland ecology,
-conservation biology, and environmental policy.
+# ── MODEL ─────────────────────────────────────────────────────
+MODEL = "llama-3.3-70b-versatile"
 
-DASHBOARD DATA YOU HAVE ACCESS TO:
-- Total monitored Ramsar sites: 98 across India
-- Average ecosystem health score: 54/100
-- Declining trend sites: 38 out of 98
-- Ecological stress index: rising from 38 (2019) to 55 (2024)
+def test_model():
+    try:
+        client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": "ping"}],
+            max_tokens=5
+        )
+        print(f"   ✅  Active model: {MODEL}")
+    except Exception as e:
+        print(f"   ⚠️   Model test failed: {e}")
 
-CRITICAL SITES (health score below 35):
-  Deepor Beel, Assam — health 35, declining
-  Kolleru Lake, Andhra Pradesh — health 33, declining
-  Kanwar Lake / Kabar Taal, Bihar — health 29, declining
-  Surinsagar Wetland, Gujarat — health 31, declining
-  Pallikaranai Marsh, Tamil Nadu — health 26, declining
-  Basai Wetland, Haryana — health 32, declining
+test_model()
 
-HIGH RISK STATES: Punjab, Rajasthan, Haryana, Bihar, Manipur
+# ── SYSTEM PROMPT ─────────────────────────────────────────────
+SYSTEM = """You are WetlandAI — an ecological intelligence agent for India's 98 Ramsar Wetland
+Monitoring Dashboard.
 
-TOP STRESSORS:
-  1. Water diversion — 82% impact
-  2. Agricultural runoff — 75% impact
-  3. Urban encroachment — 68% impact
+EXPERT KNOWLEDGE:
+- Deep expertise in Indian wetland ecology, conservation biology, hydrology, policy
+- Familiar with all 98 Ramsar-designated sites across India
+- Up-to-date on MOEF&CC, Wetlands (Conservation & Management) Rules 2017, Ramsar CoP decisions
 
-POLLUTION SOURCES: Agricultural (38%), Industrial (27%), Sewage (22%)
+DASHBOARD CONTEXT:
+- 98 sites monitored | avg health 54/100 | 38 declining sites
+- Stress index: 38 (2019) → 55 (2024)
+- Critical: Deepor Beel, Kolleru, Kanwar Lake, Surinsagar, Pallikaranai, Basai Wetland
+- Top stressors: water diversion 82%, agri runoff 75%, urban encroachment 68%,
+  climate variability 61%, invasive species 44%, industrial pollution 39%
+- Pollution split: Agricultural 38%, Industrial 27%, Sewage 22%, Urban Runoff 13%
 
-BIODIVERSITY INDEX:
-  Floodplains: 71/100 | Lakes: 62/100 | Coastal: 58/100
+WHEN ASKED FOR JSON DATA:
+- Return ONLY valid JSON — no markdown fences, no explanation, no preamble
 
-WATER SPREAD LOSS:
-  1990s: 18% | 2000s: 29% | 2010s: 41% | 2020s: 55%
+WHEN ASKED FOR NARRATIVE:
+- Be concise, scientific, and actionable
+- Reference specific site names and states
+- Plain text only — no asterisks, no bullet symbols, no markdown"""
 
-RESPONSE GUIDELINES:
-- Be professional, scientific, and concise
-- Reference specific wetland names and states where relevant
-- Give actionable conservation recommendations when asked
-- Keep responses under 200 words unless the user asks for more detail
-- Use plain text only — no markdown, no asterisks, no bullet symbols
-"""
+# ── SERVE FRONTEND ────────────────────────────────────────────
+@app.route("/")
+def index():
+    return send_from_directory(".", "index.html")
 
-# ============================================================
-# CHAT ENDPOINT
-# ============================================================
+@app.route("/<path:filename>")
+def static_files(filename):
+    return send_from_directory(".", filename)
+
+# ── CHAT ENDPOINT ─────────────────────────────────────────────
 @app.route("/chat", methods=["POST"])
 def chat():
-    user_data = request.get_json(silent=True)
-    if not user_data or "message" not in user_data:
-        return jsonify({"reply": "Invalid request. Send JSON with a 'message' field.", "error": True}), 400
+    body = request.get_json(silent=True)
+    if not body or "message" not in body:
+        return jsonify({"reply": "Send JSON with a 'message' field.", "error": True}), 400
 
-    user_message = user_data["message"].strip()
-    if not user_message:
-        return jsonify({"reply": "Please enter a question.", "error": True}), 400
+    msg = body["message"].strip()
+    if not msg:
+        return jsonify({"reply": "Empty message.", "error": True}), 400
 
-    prompt = f"{SYSTEM_CONTEXT}\n\nUser Question: {user_message}"
+    # Support optional conversation history from frontend
+    history = body.get("history", [])
+
+    messages = []
+    for h in history:
+        if h.get("role") in ("user", "assistant") and h.get("content"):
+            messages.append({"role": h["role"], "content": h["content"]})
+    messages.append({"role": "user", "content": msg})
 
     try:
-        response = client.models.generate_content(
-            model="gemini-flash-latest",
-            contents=prompt
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM},
+                *messages
+            ],
+            max_tokens=1024,
+            temperature=0.7
         )
-        return jsonify({"reply": response.text, "error": False})
+        reply = response.choices[0].message.content
+        return jsonify({"reply": reply, "error": False})
 
     except Exception as e:
-        print(f"[ERROR] Gemini API failed: {e}")
-        return jsonify({
-            "reply": "I'm having trouble connecting to my ecological sensors. Please try again.",
-            "error": True
-        }), 200
+        err = str(e)
+        if "429" in err:
+            return jsonify({"reply": "⏳ Rate limit hit. Please wait a moment and try again.", "error": True}), 200
+        print(f"[ERROR] {e}")
+        return jsonify({"reply": f"AI error: {err[:120]}", "error": True}), 200
 
-
-# ============================================================
-# HEALTH CHECK — visit http://127.0.0.1:5000/ to confirm running
-# ============================================================
-@app.route("/", methods=["GET"])
+# ── HEALTH CHECK ──────────────────────────────────────────────
+@app.route("/health")
 def health():
-    return jsonify({
-        "status": "online",
-        "service": "WetlandAI Backend",
-        "model": "gemini-flash-latest",
-        "sites_monitored": 98
-    })
+    return jsonify({"status": "online", "model": MODEL, "sites": 98})
 
-
-# ============================================================
-# RUN
-# ============================================================
+# ── RUN ───────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print("\n✅  WetlandAI backend starting...")
-    print("   Listening on http://127.0.0.1:5000")
-    print("   Chat endpoint: POST http://127.0.0.1:5000/chat")
+    print("\n✅  WetlandAI backend starting…")
+    print("   Open: http://localhost:5001")
     print("   Press Ctrl+C to stop\n")
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
